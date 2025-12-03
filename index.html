@@ -2,350 +2,881 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Передай лист Санті</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 Дитячий Повітряний Оркестр</title>
     
-    <!-- ПЕРЕНЕСЕНО SCRIPTS В HEAD -->
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <!-- Підключаємо необхідні бібліотеки -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            margin: 0;
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a237e 0%, #311b92 100%);
+            color: white;
+            height: 100vh;
+            width: 100vw;
             overflow: hidden;
-            background: #0a1e3a;
-            color: white;
-            font-family: sans-serif;
         }
-        .hidden { display: none !important; }
-       
-        #startScreen {
+        
+        /* Відео з фронтальної камери */
+        #cameraView {
             position: fixed;
-            inset: 0;
-            background: linear-gradient(135deg, #0f3443, #1e5a7e);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* НЕ перевертаємо для фронтальної камери - тепер все буде як у дзеркалі */
+            z-index: 1;
+            opacity: 0.2; /* Ще більше прозорості */
+        }
+        
+        /* Дитячий інтерфейс */
+        .child-interface {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        .fun-animal {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            font-size: 80px;
+            text-align: center;
+            animation: bounce 2s infinite;
+        }
+        
+        .instrument-selector {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
             display: flex;
-            flex-direction: column;
             justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-            z-index: 100;
+            gap: 15px;
+            z-index: 1000;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50px;
+            margin: 0 20px;
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(255, 255, 255, 0.3);
         }
-        h1 {
-            font-size: 2.8em;
-            color: #ffd700;
-            text-shadow: 0 0 20px gold;
-            margin-bottom: 20px;
-        }
-       
-        button {
-            background: #e74c3c;
+        
+        .instrument-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 3px solid white;
             color: white;
-            border: none;
-            padding: 18px 50px;
-            font-size: 1.6em;
+            padding: 15px 25px;
             border-radius: 50px;
-            margin-top: 30px;
-            box-shadow: 0 10px 30px rgba(231,76,60,.6);
+            font-size: 24px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+            pointer-events: all;
+            font-weight: bold;
         }
-        button:active { transform: scale(0.95); }
-       
-        #arContainer { position: fixed; inset: 0; }
-       
-        #hint {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #000000cc;
-            padding: 12px 30px;
-            border-radius: 20px;
-            font-size: 1.7em;
-            z-index: 10;
-            pointer-events: none;
+        
+        .instrument-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .instrument-btn.active {
+            background: #FF4081;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px #FF4081;
+        }
+        
+        .title {
+            position: fixed;
+            top: 30px;
+            left: 0;
+            right: 0;
             text-align: center;
-            width: auto;
-            max-width: 90%;
-            padding-bottom: 20px;
+            font-size: 42px;
+            color: #FFEB3B;
+            text-shadow: 0 0 20px #FF9800;
+            z-index: 1000;
+            animation: glow 2s infinite alternate;
         }
-        #sendBtn {
-            position: absolute;
-            bottom: 90px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 20px 60px;
-            font-size: 2em;
-            background: #27ae60;
-            border-radius: 50px;
-            z-index: 20;
-            display: none;
+        
+        .fun-notes {
+            position: fixed;
+            top: 100px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 28px;
+            color: #4CAF50;
+            z-index: 999;
         }
-       
-        #elfIdle, #elfMagic {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85vw;
-            max-width: 400px;
-            height: auto;
-            max-height: 75vh;
-            background-size: 100% auto;
-            background-repeat: no-repeat;
-            background-position: center bottom;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 1.3s ease;
-            z-index: 5;
+        
+        .finger-hint {
+            position: fixed;
+            bottom: 150px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 1000;
         }
-        #elfMagic { z-index: 6; }
-       
+        
+        .finger-icon {
+            font-size: 50px;
+            margin: 0 10px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Анімації для дітей */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #FF9800; }
+            to { text-shadow: 0 0 30px #FF4081, 0 0 40px #FF4081; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+        
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        
         .loading {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.5em;
-            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #311b92;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            font-size: 36px;
+            text-align: center;
+        }
+        
+        .loading-animation {
+            font-size: 80px;
+            animation: rainbow 3s infinite linear;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-<div id="startScreen">
-    <h1>Передай лист Санті</h1>
-    <p>Напиши бажання на папері — і віддай його ельфу!</p>
-    <button id="startBtn">Почати</button>
-</div>
-<div id="arContainer" class="hidden">
-    <div id="hint">Знайди дзвіночок!</div>
-    <button id="sendBtn">Відправити лист</button>
-    <div id="elfIdle"></div>
-    <div id="elfMagic"></div>
-</div>
-<div id="loading" class="loading hidden">Завантаження...</div>
+    <!-- ЗАВАНТАЖЕННЯ -->
+    <div class="loading" id="loadingScreen">
+        <div>
+            <div class="loading-animation">🎵🎹🥁🎻</div>
+            <div>Готуємо оркестр...</div>
+            <div style="margin-top: 20px; font-size: 20px; color: #FFEB3B;">
+                Покажи пальчики камері! 👆
+            </div>
+        </div>
+    </div>
 
-<script>
-    let audioEntity, magicSound, waitingSound;
-    let step = 0;
-    const hint = document.getElementById('hint');
-    const sendBtn = document.getElementById('sendBtn');
-    const elfIdle = document.getElementById('elfIdle');
-    const elfMagic = document.getElementById('elfMagic');
-    const loading = document.getElementById('loading');
+    <!-- ГОЛОВНИЙ ТАЙТЛ -->
+    <div class="title">
+        🎵 ДИТЯЧИЙ ПОВІТРЯНИЙ ОРКЕСТР 🎵
+    </div>
     
-    // Функція для перевірки наявності файлів
-    async function checkResource(url) {
-        try {
-            const response = await fetch(url, { method: 'HEAD' });
-            return response.ok;
-        } catch {
-            return false;
-        }
-    }
+    <!-- ПОКАЗУВАЧ ПАЛЬЦІВ -->
+    <div class="finger-hint" id="fingerHint">
+        <div class="finger-icon">👆</div>
+        <div class="finger-icon">✌️</div>
+        <div class="finger-icon">🤘</div>
+        <div class="finger-icon">🖖</div>
+        <div class="finger-icon">🤟</div>
+    </div>
     
-    document.getElementById('startBtn').addEventListener('click', async () => {
-        // Перевірка на HTTPS
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-            alert('Цей додаток працює лише через HTTPS або localhost.');
-            return;
+    <!-- ВІДОБРАЖЕННЯ НОТ -->
+    <div class="fun-notes" id="funNotes">
+        <span id="currentNotes">Піднімай пальці!</span>
+    </div>
+
+    <!-- ВИБІР ІНСТРУМЕНТІВ -->
+    <div class="instrument-selector">
+        <button class="instrument-btn active" onclick="switchInstrument('piano')">🎹 Фортепіано</button>
+        <button class="instrument-btn" onclick="switchInstrument('animals')">🐶 Тварини</button>
+        <button class="instrument-btn" onclick="switchInstrument('drums')">🥁 Барабани</button>
+        <button class="instrument-btn" onclick="switchInstrument('funny')">🤡 Смішні звуки</button>
+    </div>
+
+    <!-- ФРОНТАЛЬНА КАМЕРА -->
+    <video id="cameraView" autoplay playsinline muted></video>
+    
+    <!-- 3D КАНВАС -->
+    <canvas id="canvas3d"></canvas>
+
+    <script>
+        // ========== КОНФІГУРАЦІЯ ДЛЯ ДІТЕЙ ==========
+        const CONFIG = {
+            VOLUME: 0.5,
+            NOTE_SCALE: ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4'],
+            FUN_SOUNDS: [
+                'https://assets.mixkit.co/sfx/preview/mixkit-cartoon-toy-whistle-247.mp3',
+                'https://assets.mixkit.co/sfx/preview/mixkit-cartoon-crazy-laugh-383.mp3',
+                'https://assets.mixkit.co/sfx/preview/mixkit-cartoon-jump-591.mp3'
+            ]
+        };
+
+        // ========== ЗМІННІ ==========
+        let scene, camera, renderer;
+        let hands, cameraStream;
+        let currentInstrument = 'piano';
+        let activeFingers = new Map();
+        let animalSounds = [];
+        let funnySounds = [];
+        let animalMeshes = [];
+
+        // ========== ЕЛЕМЕНТИ DOM ==========
+        const elements = {
+            loading: document.getElementById('loadingScreen'),
+            funNotes: document.getElementById('funNotes'),
+            currentNotes: document.getElementById('currentNotes'),
+            fingerHint: document.getElementById('fingerHint'),
+            cameraView: document.getElementById('cameraView'),
+            canvas3d: document.getElementById('canvas3d')
+        };
+
+        // ========== ІНІЦІАЛІЗАЦІЯ ==========
+        async function init() {
+            await initAudio();
+            initThreeJS();
+            initHandTracking();
+            
+            // Приховуємо завантаження
+            setTimeout(() => {
+                elements.loading.style.opacity = '0';
+                setTimeout(() => {
+                    elements.loading.style.display = 'none';
+                    showWelcomeMessage();
+                }, 500);
+            }, 2000);
         }
-        
-        document.getElementById('startScreen').classList.add('hidden');
-        document.getElementById('arContainer').classList.remove('hidden');
-        loading.classList.remove('hidden');
-        
-        // Перевірка наявності критичних ресурсів
-        const requiredResources = [
-            'targets.mind',
-            'elf-idle.png',
-            'elf-magic.png',
-            'waiting.mp3',
-            'magic-sound.mp3'
-        ];
-        
-        for (const resource of requiredResources) {
-            const exists = await checkResource(resource);
-            if (!exists) {
-                alert(`Помилка: Файл ${resource} не знайдено! Переконайтесь, що всі файли завантажені в репозиторій.`);
-                location.reload();
+
+        // ========== АУДІО ДЛЯ ДІТЕЙ ==========
+        async function initAudio() {
+            // Чекаємо кліку (потрібно для браузера)
+            document.body.addEventListener('click', async () => {
+                await Tone.start();
+                console.log("Аудіо готове!");
+                
+                // Завантажуємо веселі звуки
+                await loadFunSounds();
+            }, { once: true });
+        }
+
+        async function loadFunSounds() {
+            // Звуки тварин
+            const animals = ['🐱', '🐶', '🐮', '🐷', '🐔'];
+            animalSounds = animals.map(animal => {
+                const player = new Tone.Player({
+                    url: getRandomAnimalSound(),
+                    autostart: false
+                }).toDestination();
+                player.load();
+                return { animal, player };
+            });
+
+            // Смішні звуки
+            CONFIG.FUN_SOUNDS.forEach(url => {
+                const player = new Tone.Player({
+                    url: url,
+                    autostart: false
+                }).toDestination();
+                player.load();
+                funnySounds.push(player);
+            });
+        }
+
+        function getRandomAnimalSound() {
+            const sounds = [
+                'https://assets.mixkit.co/sfx/preview/mixkit-cat-meow-109.mp3',
+                'https://assets.mixkit.co/sfx/preview/mixkit-dog-barking-109.mp3',
+                'https://assets.mixkit.co/sfx/preview/mixkit-cow-moo-110.mp3',
+                'https://assets.mixkit.co/sfx/preview/mixkit-pig-snort-110.mp3',
+                'https://assets.mixkit.co/sfx/preview/mixkit-rooster-crowing-246.mp3'
+            ];
+            return sounds[Math.floor(Math.random() * sounds.length)];
+        }
+
+        // ========== THREE.JS СЦЕНА ==========
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            scene.background = null;
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 5;
+            
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: elements.canvas3d, 
+                alpha: true, 
+                antialias: true 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            
+            // Веселе освітлення
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const coloredLight1 = new THREE.PointLight(0xFF4081, 1, 10);
+            coloredLight1.position.set(5, 5, 5);
+            scene.add(coloredLight1);
+            
+            const coloredLight2 = new THREE.PointLight(0x4CAF50, 1, 10);
+            coloredLight2.position.set(-5, -5, 5);
+            scene.add(coloredLight2);
+            
+            // Створюємо плаваючих тваринок
+            createFloatingAnimals();
+            
+            animate();
+        }
+
+        function createFloatingAnimals() {
+            const animals = ['🐶', '🐱', '🐰', '🐯', '🐼', '🦁', '🐮', '🐷'];
+            
+            animals.forEach((emoji, i) => {
+                // Створюємо текстуру з емодзі
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 128;
+                canvas.height = 128;
+                
+                ctx.fillStyle = '#FFEB3B';
+                ctx.fillRect(0, 0, 128, 128);
+                ctx.font = '100px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(emoji, 64, 64);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(material);
+                
+                // Розташовуємо випадково
+                sprite.position.set(
+                    Math.random() * 10 - 5,
+                    Math.random() * 6 - 3,
+                    -10 + Math.random() * 5
+                );
+                
+                sprite.scale.set(2, 2, 1);
+                sprite.userData.speed = 0.01 + Math.random() * 0.02;
+                sprite.userData.direction = Math.random() * Math.PI * 2;
+                
+                scene.add(sprite);
+                animalMeshes.push(sprite);
+            });
+        }
+
+        // ========== ТРЕКІНГ РУК ==========
+        function initHandTracking() {
+            hands = new Hands({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                }
+            });
+
+            hands.setOptions({
+                maxNumHands: 2,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults(onHandResults);
+            startCamera();
+        }
+
+        async function startCamera() {
+            try {
+                // ВИКОРИСТОВУЄМО ФРОНТАЛЬНУ КАМЕРУ
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: "user", // Фронтальна камера
+                        width: { ideal: 640 }, 
+                        height: { ideal: 480 } 
+                    }
+                });
+                
+                elements.cameraView.srcObject = cameraStream;
+                
+                // Обробка кадрів
+                const processFrame = async () => {
+                    if (elements.cameraView.readyState >= 2) {
+                        await hands.send({ image: elements.cameraView });
+                    }
+                    requestAnimationFrame(processFrame);
+                };
+                
+                elements.cameraView.onloadeddata = processFrame;
+                
+            } catch (error) {
+                console.error("Помилка камери:", error);
+                showCameraError();
+            }
+        }
+
+        function showCameraError() {
+            elements.funNotes.innerHTML = `
+                <div style="background: rgba(255, 0, 0, 0.7); padding: 20px; border-radius: 20px;">
+                    <div style="font-size: 50px;">📸</div>
+                    <h3>Потрібна камера!</h3>
+                    <p>Дозволь доступ до камери та онови сторінку</p>
+                </div>
+            `;
+        }
+
+        // ========== ОБРОБКА РЕЗУЛЬТАТІВ ==========
+        function onHandResults(results) {
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                elements.fingerHint.style.opacity = '1';
+                elements.currentNotes.textContent = "Покажи ручку камері! 👋";
                 return;
             }
+            
+            // Приховуємо підказку
+            elements.fingerHint.style.opacity = '0.3';
+            
+            // Обробляємо кожну руку
+            results.multiHandLandmarks.forEach((landmarks, handIndex) => {
+                processHand(landmarks, handIndex);
+            });
+            
+            updateNoteDisplay();
+            updateVisualEffects();
         }
-        
-        try {
-            // Ініціалізація аудіо з обробкою помилок
-            try {
-                magicSound = new Audio('magic-sound.mp3');
-                magicSound.volume = 0.9;
+
+        function processHand(landmarks, handIndex) {
+            // Визначаємо підняті пальці
+            const raisedFingers = detectRaisedFingers(landmarks);
+            
+            // Граємо звуки для кожного пальця
+            raisedFingers.forEach((finger, fingerIndex) => {
+                const key = `${handIndex}-${fingerIndex}`;
                 
-                waitingSound = new Audio('waiting.mp3');
-                waitingSound.loop = true;
-                waitingSound.volume = 0.7;
-            } catch (e) {
-                console.warn('Не вдалося завантажити аудіофайли:', e);
+                if (!activeFingers.has(key)) {
+                    playSoundForFinger(finger, key);
+                    activeFingers.set(key, finger);
+                    createFingerEffect(finger.position, handIndex);
+                }
+            });
+            
+            // Зупиняємо звуки для пальців, які опустили
+            activeFingers.forEach((finger, key) => {
+                const [handId, fingerId] = key.split('-');
+                if (parseInt(handId) === handIndex && !raisedFingers[fingerId]) {
+                    activeFingers.delete(key);
+                }
+            });
+            
+            // Жест для зміни інструмента (удар кулаком)
+            if (isFistGesture(landmarks)) {
+                switchToNextInstrument();
+            }
+        }
+
+        function detectRaisedFingers(landmarks) {
+            const fingers = [];
+            const fingerTips = [4, 8, 12, 16, 20];
+            
+            fingerTips.forEach((tipIndex, i) => {
+                const tip = landmarks[tipIndex];
+                const base = landmarks[tipIndex - 3];
+                
+                if (tip.y < base.y - 0.03) { // Палець піднятий
+                    const note = CONFIG.NOTE_SCALE[i % CONFIG.NOTE_SCALE.length];
+                    fingers.push({
+                        index: i,
+                        name: ['Великий', 'Вказівний', 'Середній', 'Безіменний', 'Мізинець'][i],
+                        note: note,
+                        position: tip
+                    });
+                }
+            });
+            
+            return fingers;
+        }
+
+        function isFistGesture(landmarks) {
+            // Кулак - всі пальці опущені
+            const fingerTips = [8, 12, 16, 20];
+            const bases = [5, 9, 13, 17];
+            
+            let fistCount = 0;
+            for (let i = 0; i < fingerTips.length; i++) {
+                if (landmarks[fingerTips[i]].y > landmarks[bases[i]].y) {
+                    fistCount++;
+                }
             }
             
-            // Створюємо A-Scene
-            const sceneEl = document.createElement('a-scene');
-            sceneEl.setAttribute('mindar-image', 'imageTargetSrc: targets.mind; uiLoading: no; uiScanning: no; maxTrack: 2;');
-            sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
-            sceneEl.setAttribute('embedded', '');
-            sceneEl.setAttribute('renderer', 'colorManagement: false; sortObjects: true');
-            document.getElementById('arContainer').appendChild(sceneEl);
-
-            // Додаємо камеру
-            const camera = document.createElement('a-camera');
-            camera.setAttribute('position', '0 1.6 0');
-            sceneEl.appendChild(camera);
-
-            // Перший маркер — дзвіночок
-            const anchor1 = document.createElement('a-entity');
-            anchor1.setAttribute('mindar-image-target', 'targetIndex: 0');
-            sceneEl.appendChild(anchor1);
-
-            // Другий маркер — зірочка
-            const anchor2 = document.createElement('a-entity');
-            anchor2.setAttribute('mindar-image-target', 'targetIndex: 1');
-            sceneEl.appendChild(anchor2);
-
-            // Додаємо звукову підказку для A-Frame (не обов'язково)
-            audioEntity = document.createElement('a-entity');
-            audioEntity.setAttribute('position', '0 1 0');
-            audioEntity.setAttribute('sound', 'src: waiting.mp3; autoplay: false; loop: true; positional: true;');
-            anchor2.appendChild(audioEntity);
-
-            anchor1.addEventListener('targetFound', () => {
-                if (step === 0) {
-                    step = 1;
-                    hint.textContent = "Чудово! Тепер зірочку!";
-                }
-            });
-
-            anchor2.addEventListener('targetFound', () => {
-                if (step !== 1) return;
-                
-                console.log("Маркер 2 знайдено, намагаємося відтворити звук");
-                
-                // Використовуємо стандартний Audio замість A-Frame sound
-                setTimeout(() => {
-                    try {
-                        if (waitingSound) {
-                            waitingSound.currentTime = 0;
-                            waitingSound.play();
-                            console.log("Звук успішно запущено");
-                        } else if (audioEntity.components.sound) {
-                            audioEntity.components.sound.play();
-                        }
-                    } catch (error) {
-                        console.error("Помилка відтворення звуку:", error);
-                    }
-                }, 100);
-                
-                hint.textContent = "Я тут, чекаю твого листа…";
-                step = 2;
-            });
-
-            anchor2.addEventListener('targetLost', () => {
-                // Пауза звуку коли маркер втрачено
-                if (waitingSound) {
-                    waitingSound.pause();
-                }
-            });
-
-            // Відстеження відстані до ельфа
-            sceneEl.addEventListener('renderstart', () => {
-                const camera = sceneEl.camera;
-                const update = () => {
-                    if (step === 2 && anchor2.object3D.visible) {
-                        const dist = camera.position.distanceTo(anchor2.object3D.getWorldPosition(new THREE.Vector3()));
-
-                        // Оновлюємо гучність звуку на основі відстані
-                        if (waitingSound) {
-                            const volume = Math.max(0.1, 1 - dist/5);
-                            waitingSound.volume = volume * 0.7; // базовий volume 0.7
-                        }
-
-                        if (dist < 0.5 && elfIdle.style.opacity === '0') {
-                            elfIdle.classList.remove('hidden');
-                            elfIdle.style.background = 'url("elf-idle.png") center bottom / 100% auto no-repeat';
-                            setTimeout(() => elfIdle.style.opacity = '1', 100);
-                            sendBtn.style.display = 'block';
-                        }
-                    }
-                    requestAnimationFrame(update);
-                };
-                update();
-            });
-
-            // Анімація idle
-            let frame = 0;
-            const idleInterval = setInterval(() => {
-                if (parseFloat(elfIdle.style.opacity) > 0) {
-                    frame = (frame + 1) % 24;
-                    elfIdle.style.backgroundPosition = `center ${-frame * (100 / 24)}%`;
-                }
-            }, 120);
-
-            // Обробник відправки листа
-            sendBtn.onclick = () => {
-                sendBtn.style.display = 'none';
-                elfIdle.style.opacity = '0';
-                
-                // Зупиняємо звук правильно
-                if (waitingSound) {
-                    waitingSound.pause();
-                }
-                if (audioEntity && audioEntity.components.sound) {
-                    audioEntity.components.sound.stop();
-                }
-                
-                clearInterval(idleInterval);
-                elfMagic.classList.remove('hidden');
-                elfMagic.style.background = 'url("elf-magic.png") center bottom / 100% auto no-repeat';
-               
-                setTimeout(() => {
-                    elfMagic.style.opacity = '1';
-                    if (magicSound) {
-                        magicSound.currentTime = 0;
-                        magicSound.play();
-                    }
-                }, 100);
-                
-                hint.textContent = "Я передав твоє бажання Санті! Вітаю з Різдвом!";
-                
-                let f = 0;
-                const anim = setInterval(() => {
-                    f++;
-                    if (f >= 36) {
-                        clearInterval(anim);
-                        setTimeout(() => {
-                            elfMagic.style.opacity = '0';
-                            hint.innerHTML = 'Я передав твоє бажання Санті!<br><br>';
-                           
-                            const restartBtn = document.createElement('button');
-                            restartBtn.textContent = 'Розпочати знову';
-                            restartBtn.style.cssText = 'padding:15px 50px;font-size:1.6em;background:#27ae60;border:none;border-radius:50px;cursor:pointer';
-                            restartBtn.onclick = () => location.reload();
-                            hint.appendChild(restartBtn);
-                        }, 1200);
-                    } else {
-                        elfMagic.style.backgroundPosition = `center ${-f * (100 / 36)}%`;
-                    }
-                }, 80);
-            };
-
-            loading.classList.add('hidden');
-        } catch (e) {
-            console.error('Помилка запуску AR:', e);
-            loading.classList.add('hidden');
-            alert('Не вдалося отримати доступ до камери. Увімкніть дозвіл.');
-           
-            document.getElementById('arContainer').classList.add('hidden');
-            document.getElementById('startScreen').classList.remove('hidden');
+            return fistCount >= 3; // 3 або більше пальців опущено
         }
-    });
-</script>
+
+        // ========== ВІДТВОРЕННЯ ЗВУКІВ ==========
+        function playSoundForFinger(finger, key) {
+            const now = Tone.now();
+            
+            switch(currentInstrument) {
+                case 'piano':
+                    playPianoNote(finger.note, now);
+                    break;
+                    
+                case 'animals':
+                    playAnimalSound(finger.index, now);
+                    break;
+                    
+                case 'drums':
+                    playDrumSound(finger.index, now);
+                    break;
+                    
+                case 'funny':
+                    playFunnySound(finger.index, now);
+                    break;
+            }
+        }
+
+        function playPianoNote(note, time) {
+            const synth = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.1,
+                    sustain: 0.3,
+                    release: 0.5
+                }
+            }).toDestination();
+            
+            synth.volume.value = Tone.gainToDb(CONFIG.VOLUME);
+            synth.triggerAttackRelease(note, '8n', time);
+            
+            // Візуальний ефект
+            createNoteBubble(note);
+        }
+
+        function playAnimalSound(fingerIndex, time) {
+            if (animalSounds[fingerIndex]) {
+                const sound = animalSounds[fingerIndex];
+                sound.player.start(time);
+                
+                // Показуємо тваринку
+                showAnimalEmoji(sound.animal);
+            }
+        }
+
+        function playDrumSound(fingerIndex, time) {
+            const drumSounds = [
+                'https://tonejs.github.io/audio/drum-samples/CR78/kick.mp3',
+                'https://tonejs.github.io/audio/drum-samples/CR78/snare.mp3',
+                'https://tonejs.github.io/audio/drum-samples/CR78/hh.mp3',
+                'https://tonejs.github.io/audio/drum-samples/CR78/clap.mp3',
+                'https://tonejs.github.io/audio/drum-samples/CR78/tom.mp3'
+            ];
+            
+            const player = new Tone.Player(drumSounds[fingerIndex % drumSounds.length])
+                .toDestination();
+            player.start(time);
+            
+            createDrumEffect();
+        }
+
+        function playFunnySound(fingerIndex, time) {
+            if (funnySounds.length > 0) {
+                const sound = funnySounds[fingerIndex % funnySounds.length];
+                sound.start(time);
+                
+                createFunnyEffect();
+            }
+        }
+
+        // ========== ВІЗУАЛЬНІ ЕФЕКТИ ==========
+        function createFingerEffect(position, handIndex) {
+            const colors = [0xFF4081, 0x4CAF50, 0x2196F3, 0xFFEB3B];
+            const color = colors[handIndex % colors.length];
+            
+            const geometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const sphere = new THREE.Mesh(geometry, material);
+            
+            // Конвертуємо координати з MediaPipe в Three.js
+            const x = (position.x * 2 - 1) * 5;
+            const y = -(position.y * 2 - 1) * 3;
+            
+            sphere.position.set(x, y, -2);
+            scene.add(sphere);
+            
+            // Анімація
+            gsap.to(sphere.scale, {
+                x: 3,
+                y: 3,
+                z: 3,
+                duration: 0.5,
+                ease: "power2.out"
+            });
+            
+            gsap.to(sphere.material, {
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => scene.remove(sphere)
+            });
+        }
+
+        function createNoteBubble(note) {
+            const bubble = document.createElement('div');
+            bubble.textContent = note;
+            bubble.style.cssText = `
+                position: fixed;
+                left: ${Math.random() * 70 + 15}%;
+                top: 20%;
+                font-size: 32px;
+                color: #FFEB3B;
+                background: rgba(255, 64, 129, 0.8);
+                padding: 10px 20px;
+                border-radius: 50px;
+                animation: floatUp 2s forwards;
+                z-index: 1000;
+            `;
+            document.body.appendChild(bubble);
+            
+            setTimeout(() => bubble.remove(), 2000);
+        }
+
+        function showAnimalEmoji(animal) {
+            const emoji = document.createElement('div');
+            emoji.textContent = animal;
+            emoji.style.cssText = `
+                position: fixed;
+                left: ${Math.random() * 70 + 15}%;
+                top: 40%;
+                font-size: 60px;
+                animation: bounce 1s infinite;
+                z-index: 1000;
+                filter: drop-shadow(0 0 10px #4CAF50);
+            `;
+            document.body.appendChild(emoji);
+            
+            setTimeout(() => emoji.remove(), 1500);
+        }
+
+        function createDrumEffect() {
+            // Створюємо кільця
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const ring = createRing(0.5 + i * 0.3, 0xFF9800);
+                    scene.add(ring);
+                    
+                    gsap.to(ring.scale, {
+                        x: 5,
+                        y: 5,
+                        duration: 0.8,
+                        ease: "power2.out"
+                    });
+                    
+                    gsap.to(ring.material, {
+                        opacity: 0,
+                        duration: 0.8,
+                        onComplete: () => scene.remove(ring)
+                    });
+                }, i * 100);
+            }
+        }
+
+        function createRing(radius, color) {
+            const geometry = new THREE.RingGeometry(radius, radius + 0.1, 32);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            
+            const ring = new THREE.Mesh(geometry, material);
+            ring.position.z = -1;
+            ring.rotation.x = Math.PI / 2;
+            
+            return ring;
+        }
+
+        // ========== ІНТЕРФЕЙС ==========
+        function updateNoteDisplay() {
+            const notes = Array.from(activeFingers.values()).map(f => f.note);
+            if (notes.length > 0) {
+                elements.currentNotes.textContent = notes.join(' ');
+                elements.currentNotes.style.color = '#FFEB3B';
+                elements.currentNotes.style.transform = `scale(${1 + notes.length * 0.1})`;
+                
+                setTimeout(() => {
+                    elements.currentNotes.style.transform = 'scale(1)';
+                }, 100);
+            } else {
+                elements.currentNotes.textContent = "Піднімай пальці вище! ⬆️";
+                elements.currentNotes.style.color = '#4CAF50';
+            }
+        }
+
+        function updateVisualEffects() {
+            // Змінюємо колір тваринок залежно від активних пальців
+            animalMeshes.forEach((animal, i) => {
+                animal.material.color.setHSL(
+                    (Date.now() * 0.001 + i * 0.1) % 1,
+                    0.8,
+                    0.5 + activeFingers.size * 0.1
+                );
+            });
+        }
+
+        function switchToNextInstrument() {
+            const instruments = ['piano', 'animals', 'drums', 'funny'];
+            const currentIndex = instruments.indexOf(currentInstrument);
+            const nextIndex = (currentIndex + 1) % instruments.length;
+            
+            switchInstrument(instruments[nextIndex]);
+        }
+
+        function switchInstrument(instrument) {
+            // Зупиняємо всі звуки
+            activeFingers.clear();
+            
+            // Оновлюємо інструмент
+            currentInstrument = instrument;
+            
+            // Оновлюємо кнопки
+            document.querySelectorAll('.instrument-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Знаходимо відповідну кнопку
+            const buttons = document.querySelectorAll('.instrument-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes(getInstrumentName(instrument))) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Показуємо повідомлення
+            showInstrumentMessage(instrument);
+        }
+
+        function getInstrumentName(instrument) {
+            const names = {
+                'piano': 'Фортепіано',
+                'animals': 'Тварини',
+                'drums': 'Барабани',
+                'funny': 'Смішні звуки'
+            };
+            return names[instrument] || instrument;
+        }
+
+        function showInstrumentMessage(instrument) {
+            const messages = {
+                'piano': 'Тепер ти піаніст! 🎹',
+                'animals': 'Звуки тваринок! 🐶🐱',
+                'drums': 'Барабанна дробилка! 🥁',
+                'funny': 'Смішні звуки! 🤡'
+            };
+            
+            elements.currentNotes.textContent = messages[instrument];
+            elements.currentNotes.style.color = '#FF4081';
+            elements.currentNotes.style.fontSize = '36px';
+            
+            setTimeout(() => {
+                elements.currentNotes.style.fontSize = '28px';
+            }, 1500);
+        }
+
+        function showWelcomeMessage() {
+            const welcome = document.createElement('div');
+            welcome.innerHTML = `
+                <div style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%); 
+                           background: rgba(255, 64, 129, 0.9); padding: 30px; border-radius: 30px;
+                           text-align: center; z-index: 2000; border: 5px solid #FFEB3B;">
+                    <div style="font-size: 60px;">🎉</div>
+                    <h2 style="color: white;">Вітаю в оркестрі!</h2>
+                    <p>Піднімай пальці, щоб грати музику!</p>
+                    <p style="font-size: 40px; margin-top: 20px;">👆 ✌️ 🤘 🖖 🤟</p>
+                </div>
+            `;
+            document.body.appendChild(welcome);
+            
+            setTimeout(() => {
+                gsap.to(welcome, {
+                    opacity: 0,
+                    duration: 1,
+                    onComplete: () => welcome.remove()
+                });
+            }, 3000);
+        }
+
+        // ========== АНІМАЦІЯ ==========
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Анімуємо тваринок
+            animalMeshes.forEach(animal => {
+                animal.position.x += Math.cos(animal.userData.direction) * animal.userData.speed;
+                animal.position.y += Math.sin(animal.userData.direction) * animal.userData.speed;
+                
+                // Відбиваємо від стін
+                if (Math.abs(animal.position.x) > 5) {
+                    animal.userData.direction = Math.PI - animal.userData.direction;
+                }
+                if (Math.abs(animal.position.y) > 3) {
+                    animal.userData.direction = -animal.userData.direction;
+                }
+                
+                // Обертання
+                animal.rotation.z += 0.01;
+            });
+            
+            renderer.render(scene, camera);
+        }
+
+        // ========== ЗАПУСК ==========
+        window.addEventListener('load', init);
+        
+        // Глобальні функції
+        window.switchInstrument = switchInstrument;
+        
+        // Додаємо анімацію для спливання
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes floatUp {
+                0% { transform: translateY(0) scale(1); opacity: 1; }
+                100% { transform: translateY(-100px) scale(0); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Ресайз
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
 </body>
 </html>
