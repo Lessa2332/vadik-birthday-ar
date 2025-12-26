@@ -1,35 +1,46 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="utf-8">
-    <title>З Днем Народження, Вадік!</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <title>🥂 З Днем Народження, Вадік!</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             margin: 0;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #000;
+            background: #000; /* Запасний фон */
         }
         
+        /* Відео як фон */
+        #videoBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover; /* Заповнює екран */
+            transform: scaleX(-1); /* Дзеркальне відображення */
+            z-index: 1;
+            display: none; /* Спочатку приховано */
+        }
+        
+        /* Canvas для Three.js поверх відео */
         #canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            z-index: 2; /* Вище за відео */
+            pointer-events: none; /* Щоб не блокував кліки */
         }
         
+        /* Інтерфейс поверх усього */
         #startButton {
             position: fixed;
             top: 50%;
@@ -49,18 +60,9 @@
             animation: pulse 2s infinite;
         }
         
-        #startButton:hover {
-            transform: translate(-50%, -50%) scale(1.1);
-            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.7);
-        }
-        
-        #startButton:active {
-            transform: translate(-50%, -50%) scale(0.95);
-        }
-        
         #greeting {
             position: fixed;
-            top: 20%;
+            top: 10%;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -69,73 +71,52 @@
             color: white;
             font-size: clamp(20px, 5vw, 36px);
             font-weight: bold;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.9);
             display: none;
             z-index: 10;
-            padding: 20px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.9), rgba(255, 204, 0, 0.8));
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.9), rgba(255, 183, 77, 0.9));
             border-radius: 20px;
             backdrop-filter: blur(10px);
-            border: 3px solid white;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.4);
         }
         
-        #loading {
+        #loading, #error, .instructions {
             position: fixed;
-            top: 20%;
             left: 50%;
             transform: translateX(-50%);
             color: white;
-            font-size: 18px;
             text-align: center;
+            z-index: 10;
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.7);
             display: none;
-            z-index: 11;
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 10px;
         }
         
-        #error {
-            position: fixed;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ff4444;
-            font-size: 18px;
-            text-align: center;
-            display: none;
-            z-index: 12;
-            background: rgba(0,0,0,0.9);
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
+        #loading { top: 10%; font-size: 18px; }
+        #error { 
+            top: 10%; 
+            color: #ff6b6b; 
+            font-size: 16px;
+            border: 2px solid #ff6b6b;
             max-width: 500px;
+            width: 90%;
         }
-        
-        .instructions {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            text-align: center;
-            font-size: 14px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 10px;
-            z-index: 9;
-            display: none;
+        .instructions { 
+            bottom: 30px; 
+            font-size: 16px;
+            border: 2px solid #4ecdc4;
+            max-width: 400px;
+            width: 90%;
         }
         
         @keyframes pulse {
             0% { transform: translate(-50%, -50%) scale(1); }
             50% { transform: translate(-50%, -50%) scale(1.05); }
             100% { transform: translate(-50%, -50%) scale(1); }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         
         @keyframes sparkle {
@@ -145,79 +126,69 @@
     </style>
 </head>
 <body>
-    <button id="startButton">🎉 Запустити AR-привітання</button>
-    <div id="greeting">З днем народження, Вадік!<br>За твоє здоров'я, успіхи та круті пригоди! 🥂</div>
-    <div id="loading">Завантаження системи розпізнавання рук...</div>
-    <div id="error"></div>
-    <div class="instructions">Покажіть долоню камері. Зведіть великий та вказівний пальці для тосту! ✨</div>
+    <!-- Відеофон (спочатку приховано) -->
+    <video id="videoBackground" playsinline></video>
+    
+    <!-- Canvas для Three.js -->
     <canvas id="canvas"></canvas>
     
-    <!-- Three.js -->
+    <!-- Інтерфейс -->
+    <button id="startButton">🎉 Запустити AR-привітання</button>
+    <div id="greeting">З Днем Народження, Вадік!<br>За твоє здоров'я, успіхи та круті пригоди! 🥂</div>
+    <div id="loading">Завантаження системи розпізнавання рук...</div>
+    <div id="error"></div>
+    <div class="instructions">🖐️ Покажіть долоню камері<br>👉 Зведіть великий та вказівний пальці для тосту!</div>
+
+    <!-- Бібліотеки -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- MediaPipe Hands (остання стабільна версія) -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
-    
+
     <script>
         (function() {
             'use strict';
             
-            // Елементи DOM
+            // DOM-елементи
+            const videoBackground = document.getElementById('videoBackground');
+            const canvas = document.getElementById('canvas');
             const startButton = document.getElementById('startButton');
             const greeting = document.getElementById('greeting');
             const loading = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
             const instructions = document.querySelector('.instructions');
-            const canvas = document.getElementById('canvas');
             
             // Глобальні змінні
-            let videoElement = null;
-            let scene = null;
-            let camera = null;
-            let renderer = null;
-            let glassGroup = null;
-            let hands = null;
-            let animationId = null;
+            let videoForProcessing = null; // Приховане відео для MediaPipe
+            let scene, camera, renderer, glassGroup, hands;
             let isRunning = false;
+            let lastPinchTime = 0; // Для запобігання спаму іскрами
             
-            // Показати помилку
-            function showError(message) {
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-                startButton.style.display = 'block';
-                loading.style.display = 'none';
-            }
-            
-            // Приховати помилку
-            function hideError() {
-                errorDiv.style.display = 'none';
-            }
-            
-            // Ініціалізація
+            // ====== ІНІЦІАЛІЗАЦІЯ ======
             function init() {
                 try {
-                    // Створення відео елемента
-                    videoElement = document.createElement('video');
-                    videoElement.autoplay = true;
-                    videoElement.playsInline = true;
-                    videoElement.style.display = 'none';
-                    document.body.appendChild(videoElement);
+                    // Створюємо приховане відео для MediaPipe
+                    videoForProcessing = document.createElement('video');
+                    videoForProcessing.autoplay = true;
+                    videoForProcessing.playsInline = true;
+                    videoForProcessing.style.display = 'none';
+                    document.body.appendChild(videoForProcessing);
                     
-                    // Ініціалізація Three.js
+                    // Ініціалізуємо Three.js
                     initThreeJS();
                     
-                    // Ініціалізація MediaPipe Hands
+                    // Ініціалізуємо MediaPipe Hands
                     initMediaPipe();
                     
-                    console.log('Ініціалізація завершена успішно');
+                    console.log('✅ Система ініціалізована');
                 } catch (err) {
                     showError('Помилка ініціалізації: ' + err.message);
                 }
             }
             
-            // Ініціалізація Three.js
+            // ====== THREE.JS ======
             function initThreeJS() {
+                // Сцена
                 scene = new THREE.Scene();
+                scene.background = null; // Прозорий фон
                 
                 // Камера
                 camera = new THREE.PerspectiveCamera(
@@ -237,63 +208,57 @@
                 });
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                renderer.outputEncoding = THREE.sRGBEncoding;
+                renderer.setClearColor(0x000000, 0); // Повністю прозорий
                 
                 // Освітлення
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
                 scene.add(ambientLight);
                 
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(5, 5, 5);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(10, 10, 5);
                 scene.add(directionalLight);
                 
-                // Створення 3D келиха
+                // Створення келиха
                 createChampagneGlass();
             }
             
-            // Створення 3D келиха шампанського
+            // ====== 3D-КЕЛИХ ======
             function createChampagneGlass() {
                 glassGroup = new THREE.Group();
                 
-                // Ніжка келиха (золота)
+                // Ніжка (золота)
                 const stemGeometry = new THREE.CylinderGeometry(0.02, 0.025, 0.3, 16);
                 const stemMaterial = new THREE.MeshPhongMaterial({
                     color: 0xFFD700,
                     shininess: 100,
-                    specular: 0x222222
+                    specular: 0x333333
                 });
                 const stem = new THREE.Mesh(stemGeometry, stemMaterial);
                 stem.position.y = 0.15;
                 glassGroup.add(stem);
                 
-                // Основа ніжки
-                const baseGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.02, 16);
-                const base = new THREE.Mesh(baseGeometry, stemMaterial);
-                base.position.y = 0.01;
-                glassGroup.add(base);
-                
-                // Чаша келиха (кришталь)
+                // Чаша (кришталева)
                 const bowlGeometry = new THREE.CylinderGeometry(0.12, 0.09, 0.25, 32);
                 const bowlMaterial = new THREE.MeshPhysicalMaterial({
                     color: 0xFFFFFF,
                     transparent: true,
-                    opacity: 0.3,
-                    transmission: 0.9,
-                    roughness: 0.1,
-                    metalness: 0.0,
-                    clearcoat: 1.0,
+                    opacity: 0.4,
+                    transmission: 0.95,
+                    roughness: 0.05,
+                    metalness: 0,
+                    clearcoat: 1,
                     clearcoatRoughness: 0.1
                 });
                 const bowl = new THREE.Mesh(bowlGeometry, bowlMaterial);
                 bowl.position.y = 0.4;
                 glassGroup.add(bowl);
                 
-                // Рідина (шампанське)
+                // Шампанське (рідина)
                 const liquidGeometry = new THREE.SphereGeometry(0.1, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
                 const liquidMaterial = new THREE.MeshPhongMaterial({
                     color: 0xFFF8DC,
                     transparent: true,
-                    opacity: 0.8,
+                    opacity: 0.9,
                     shininess: 100
                 });
                 const liquid = new THREE.Mesh(liquidGeometry, liquidMaterial);
@@ -302,19 +267,20 @@
                 glassGroup.add(liquid);
                 
                 // Бульбашки
-                for (let i = 0; i < 20; i++) {
-                    const bubbleGeometry = new THREE.SphereGeometry(0.005 + Math.random() * 0.01, 8, 8);
+                for (let i = 0; i < 25; i++) {
+                    const size = 0.004 + Math.random() * 0.012;
+                    const bubbleGeometry = new THREE.SphereGeometry(size, 8, 8);
                     const bubbleMaterial = new THREE.MeshPhongMaterial({
                         color: 0xFFFFFF,
                         transparent: true,
-                        opacity: 0.7
+                        opacity: 0.8
                     });
                     const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
                     
                     bubble.position.set(
-                        (Math.random() - 0.5) * 0.1,
-                        0.35 + Math.random() * 0.1,
-                        (Math.random() - 0.5) * 0.1
+                        (Math.random() - 0.5) * 0.15,
+                        0.35 + Math.random() * 0.12,
+                        (Math.random() - 0.5) * 0.15
                     );
                     
                     glassGroup.add(bubble);
@@ -324,7 +290,7 @@
                 glassGroup.visible = false;
             }
             
-            // Ініціалізація MediaPipe Hands
+            // ====== MEDIAPIPE HANDS ======
             function initMediaPipe() {
                 hands = new self.Hands({
                     locateFile: (file) => {
@@ -342,11 +308,12 @@
                 hands.onResults(onHandResults);
             }
             
-            // Запуск камери
+            // ====== ЗАПУСК КАМЕРИ ======
             async function startCamera() {
                 try {
                     hideError();
                     loading.style.display = 'block';
+                    startButton.style.display = 'none';
                     
                     const constraints = {
                         video: {
@@ -357,104 +324,114 @@
                         }
                     };
                     
-                    // Перевірка підтримки getUserMedia
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                        throw new Error('Ваш браузер не підтримує доступ до камери');
+                    if (!navigator.mediaDevices?.getUserMedia) {
+                        throw new Error('Браузер не підтримує камеру');
                     }
                     
+                    // Отримуємо потік з камери
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    videoElement.srcObject = stream;
                     
-                    // Чекаємо поки відео почне відтворюватися
-                    await new Promise((resolve) => {
-                        videoElement.onloadedmetadata = () => {
-                            videoElement.play();
-                            resolve();
-                        };
-                    });
+                    // Підключаємо потік до ДВОХ відео-елементів:
+                    // 1. Для фону (видимий)
+                    videoBackground.srcObject = stream;
+                    // 2. Для MediaPipe (прихований)
+                    videoForProcessing.srcObject = stream;
+                    
+                    // Чекаємо готовності відео
+                    await Promise.all([
+                        new Promise(resolve => videoBackground.onloadedmetadata = resolve),
+                        new Promise(resolve => videoForProcessing.onloadedmetadata = resolve)
+                    ]);
+                    
+                    // Запускаємо відтворення
+                    videoBackground.play();
+                    videoForProcessing.play();
+                    
+                    // Показуємо відеофон
+                    videoBackground.style.display = 'block';
                     
                     // Запускаємо обробку кадрів
                     startProcessing();
                     
+                    // Інтерфейс
                     loading.style.display = 'none';
                     instructions.style.display = 'block';
                     isRunning = true;
                     
+                    console.log('📹 Камера запущена, відеофон активний');
+                    
                 } catch (err) {
-                    console.error('Помилка камери:', err);
-                    showError('Не вдалося запустити камеру: ' + err.message);
+                    console.error('❌ Помилка камери:', err);
+                    showError('Не вдалося запустити камеру: ' + err.message + 
+                              '\n\n1. Дозвольте доступ до камери\n2. Переконайтеся, що камера не використовується іншою програмою\n3. Спробуйте інший браузер (Chrome/Edge/Safari)');
                 }
             }
             
-            // Обробка відео кадрів
+            // ====== ОБРОБКА КАДРІВ MEDIAPIPE ======
             function startProcessing() {
                 function processFrame() {
                     if (!isRunning) return;
                     
                     try {
-                        if (videoElement.readyState >= videoElement.HAVE_ENOUGH_DATA) {
-                            hands.send({image: videoElement});
+                        if (videoForProcessing.readyState >= videoForProcessing.HAVE_ENOUGH_DATA) {
+                            hands.send({image: videoForProcessing});
                         }
-                        
-                        // Продовжуємо обробку
                         requestAnimationFrame(processFrame);
                     } catch (err) {
                         console.error('Помилка обробки кадру:', err);
                     }
                 }
-                
                 processFrame();
             }
             
-            // Обробка результатів розпізнавання рук
+            // ====== ОБРОБКА РЕЗУЛЬТАТІВ РОЗПІЗНАННЯ ======
             function onHandResults(results) {
                 if (!isRunning) return;
                 
                 try {
-                    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    if (results.multiHandLandmarks?.length > 0) {
                         const landmarks = results.multiHandLandmarks[0];
                         
-                        // Отримуємо координати центру долоні
-                        const wrist = landmarks[0];  // Зап'ястя
-                        const middleBase = landmarks[9];  // Основа середнього пальця
-                        
                         // Центр долоні
-                        const palmX = (wrist.x + middleBase.x) / 2;
-                        const palmY = (wrist.y + middleBase.y) / 2;
-                        const palmZ = (wrist.z + middleBase.z) / 2;
+                        const wrist = landmarks[0];
+                        const middleBase = landmarks[9];
                         
                         // Конвертація координат для Three.js
-                        const x = (palmX - 0.5) * 4;   // Масштабуємо
-                        const y = (0.5 - palmY) * 4;   // Інвертуємо Y
-                        const z = -palmZ * 2;          // Глибина
+                        const x = (wrist.x - 0.5) * 6;
+                        const y = (0.5 - wrist.y) * 4;
+                        const z = -wrist.z * 2;
                         
-                        // Оновлюємо позицію келиха
-                        glassGroup.position.set(x, y, z);
+                        // Плавна анімація позиції
+                        glassGroup.position.lerp(new THREE.Vector3(x, y, z), 0.2);
                         glassGroup.visible = true;
                         
-                        // Плавна анімація обертання
+                        // Обертання
                         glassGroup.rotation.y += 0.01;
                         
-                        // Перевірка жесту "щипок" (pinch)
+                        // Детекція "щипка" (великий + вказівний пальці)
                         const thumbTip = landmarks[4];
                         const indexTip = landmarks[8];
-                        
-                        // Відстань між кінчиками пальців
                         const distance = Math.sqrt(
                             Math.pow(thumbTip.x - indexTip.x, 2) +
                             Math.pow(thumbTip.y - indexTip.y, 2) +
                             Math.pow(thumbTip.z - indexTip.z, 2)
                         );
                         
-                        const pinchThreshold = 0.05;
-                        const isPinching = distance < pinchThreshold;
+                        const isPinching = distance < 0.05;
+                        const now = Date.now();
                         
-                        // Показуємо/ховаємо привітання
-                        if (isPinching) {
+                        if (isPinching && now - lastPinchTime > 1000) {
+                            // Показуємо привітання
                             greeting.style.display = 'block';
-                            greeting.style.animation = 'fadeIn 0.5s forwards';
+                            greeting.style.animation = 'none';
+                            setTimeout(() => {
+                                greeting.style.animation = 'fadeIn 0.5s';
+                            }, 10);
+                            
+                            // Створюємо іскри
                             createSparkles();
-                        } else {
+                            lastPinchTime = now;
+                        } else if (!isPinching) {
                             greeting.style.display = 'none';
                         }
                         
@@ -468,51 +445,61 @@
                 }
             }
             
-            // Створення ефекту іскор
+            // ====== ЕФЕКТ ІСКОР ======
             function createSparkles() {
-                const sparkleCount = 15;
+                const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FF8E53'];
                 
-                for (let i = 0; i < sparkleCount; i++) {
+                for (let i = 0; i < 20; i++) {
                     setTimeout(() => {
                         const sparkle = document.createElement('div');
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        
                         sparkle.style.cssText = `
                             position: fixed;
-                            width: ${10 + Math.random() * 20}px;
-                            height: ${10 + Math.random() * 20}px;
-                            background: radial-gradient(circle, #FFD700, #FFF8DC);
+                            width: ${10 + Math.random() * 25}px;
+                            height: ${10 + Math.random() * 25}px;
+                            background: radial-gradient(circle, ${color}, transparent);
                             border-radius: 50%;
                             pointer-events: none;
-                            top: ${20 + Math.random() * 60}%;
+                            top: ${10 + Math.random() * 80}%;
                             left: ${Math.random() * 100}%;
-                            box-shadow: 0 0 20px #FFD700;
-                            animation: sparkle 1s forwards;
+                            box-shadow: 0 0 20px ${color};
+                            animation: sparkle ${0.5 + Math.random()}s forwards;
                             z-index: 5;
                         `;
-                        document.body.appendChild(sparkle);
                         
+                        document.body.appendChild(sparkle);
                         setTimeout(() => sparkle.remove(), 1000);
-                    }, i * 50);
+                    }, i * 30);
                 }
             }
             
-            // Анімаційний цикл
+            // ====== ДОПОМІЖНІ ФУНКЦІЇ ======
+            function showError(message) {
+                errorDiv.innerHTML = `⚠️ ${message}`;
+                errorDiv.style.display = 'block';
+                startButton.style.display = 'block';
+                loading.style.display = 'none';
+            }
+            
+            function hideError() {
+                errorDiv.style.display = 'none';
+            }
+            
+            // ====== АНІМАЦІЙНИЙ ЦИКЛ ======
             function animate() {
-                animationId = requestAnimationFrame(animate);
-                
+                requestAnimationFrame(animate);
                 if (renderer && scene && camera) {
                     renderer.render(scene, camera);
                 }
             }
             
-            // Обробка подій
+            // ====== ОБРОБНИКИ ПОДІЙ ======
             function setupEventListeners() {
-                // Клік на кнопку запуску
-                startButton.addEventListener('click', async () => {
-                    startButton.style.display = 'none';
-                    await startCamera();
-                });
+                // Запуск додатку
+                startButton.addEventListener('click', startCamera);
                 
-                // Ресайз вікна
+                // Адаптація до розміру вікна
                 window.addEventListener('resize', () => {
                     if (camera && renderer) {
                         camera.aspect = window.innerWidth / window.innerHeight;
@@ -521,55 +508,58 @@
                     }
                 });
                 
-                // Обробка помилок Three.js
-                window.addEventListener('error', (e) => {
-                    if (e.message.includes('THREE') || e.message.includes('WebGL')) {
-                        showError('Помилка графіки. Перевірте підтримку WebGL у вашому браузері.');
-                    }
-                });
+                // Спроба автоматичного запуску на десктопах
+                if (window.innerWidth > 768 && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                    setTimeout(() => {
+                        console.log('🖥️ Автоматичний запуск на десктопі');
+                        startButton.style.background = 'linear-gradient(135deg, #4ECDC4, #44A08D)';
+                        startButton.textContent = '🎥 Автозапуск через 3...';
+                        
+                        setTimeout(() => {
+                            startButton.textContent = '🎥 Автозапуск через 2...';
+                        }, 1000);
+                        
+                        setTimeout(() => {
+                            startButton.textContent = '🎥 Автозапуск через 1...';
+                        }, 2000);
+                        
+                        setTimeout(() => {
+                            startCamera();
+                        }, 3000);
+                    }, 1000);
+                }
             }
             
-            // Зупинка додатка
+            // ====== ЗУПИНКА ДОДАТКУ ======
             function stopApp() {
                 isRunning = false;
                 
-                if (animationId) {
-                    cancelAnimationFrame(animationId);
-                    animationId = null;
+                // Зупиняємо потік камери
+                if (videoBackground.srcObject) {
+                    videoBackground.srcObject.getTracks().forEach(track => track.stop());
+                }
+                if (videoForProcessing?.srcObject) {
+                    videoForProcessing.srcObject.getTracks().forEach(track => track.stop());
                 }
                 
-                if (videoElement && videoElement.srcObject) {
-                    const tracks = videoElement.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
-                    videoElement.srcObject = null;
-                }
-                
+                // Ховаємо інтерфейс
+                videoBackground.style.display = 'none';
                 glassGroup.visible = false;
                 greeting.style.display = 'none';
                 instructions.style.display = 'none';
                 startButton.style.display = 'block';
+                loading.style.display = 'none';
             }
             
-            // Ініціалізація при завантаженні
+            // ====== ІНІЦІАЛІЗАЦІЯ ПРИ ЗАВАНТАЖЕННІ ======
             window.addEventListener('DOMContentLoaded', () => {
                 init();
                 setupEventListeners();
                 animate();
-                
-                // Автоматичний запуск на десктопах (опціонально)
-                if (window.innerWidth > 768 && !navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
-                    setTimeout(() => {
-                        startButton.click();
-                    }, 1000);
-                }
             });
             
             // Експорт для дебагу
-            window.app = {
-                stopApp,
-                startCamera,
-                isRunning: () => isRunning
-            };
+            window.app = { stopApp, startCamera };
             
         })();
     </script>
