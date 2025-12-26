@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>🎂 Загадай бажання | Задуй свічку</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎂</text></svg>">
   <style>
     * {
       margin: 0;
@@ -28,7 +27,7 @@
     }
     #video { z-index: 1; display: none; }
     #canvas { z-index: 2; display: none; }
-    #confettiCanvas { z-index: 60; pointer-events: none; }
+    #confettiCanvas { z-index: 3; pointer-events: none; }
 
     #loading {
       position: fixed;
@@ -43,10 +42,8 @@
       justify-content: center;
       z-index: 1000;
       color: #ff6b95;
-      font-size: clamp(18px, 4vw, 24px);
       text-align: center;
       padding: 20px;
-      gap: 20px;
     }
     .loader {
       width: 60px;
@@ -55,12 +52,7 @@
       border-top: 4px solid #ff6b95;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-    }
-    #loading p {
-      color: #666;
-      font-size: clamp(14px, 3vw, 18px);
-      max-width: 300px;
-      line-height: 1.4;
+      margin-bottom: 20px;
     }
 
     #wishText {
@@ -78,9 +70,8 @@
       text-align: center;
       border: 3px solid #ffb6c1;
       display: none;
-      max-width: 80%;
+      max-width: 90%;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      backdrop-filter: blur(10px);
     }
 
     #handIndicator {
@@ -89,7 +80,6 @@
       left: 50%;
       transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
       color: #ff6b95;
       padding: 12px 20px;
       border-radius: 20px;
@@ -100,10 +90,6 @@
       z-index: 99;
       font-size: 16px;
       font-weight: bold;
-    }
-    .indicator.show { 
-      display: flex; 
-      animation: slideDown 0.3s ease; 
     }
 
     #flameStatus {
@@ -118,7 +104,6 @@
       font-size: 16px;
       z-index: 100;
       display: none;
-      backdrop-filter: blur(10px);
       border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
@@ -131,7 +116,6 @@
       height: 60px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(20px);
       border: 3px solid #ff6b95;
       color: #ff6b95;
       font-size: 24px;
@@ -140,29 +124,20 @@
       justify-content: center;
       cursor: pointer;
       z-index: 100;
-      transition: all 0.3s ease;
       box-shadow: 0 8px 25px rgba(255, 107, 149, 0.3);
-    }
-    #micBtn:hover { 
-      transform: translateX(-50%) scale(1.1); 
-      background: white;
     }
 
     @keyframes spin { 
       0% { transform: rotate(0deg); } 
       100% { transform: rotate(360deg); } 
     }
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
   </style>
 </head>
 <body>
   <div id="loading">
     <div class="loader"></div>
-    <div id="loadingText">🎂 Готуємо торт...</div>
-    <p>Дозвольте доступ до камери та мікрофона</p>
+    <div>🎂 Готуємо торт...</div>
+    <p style="margin-top: 20px; color: #666;">Дозвольте доступ до камери</p>
   </div>
 
   <video id="video" playsinline muted></video>
@@ -170,611 +145,435 @@
   <canvas id="confettiCanvas"></canvas>
 
   <div id="wishText">🎂 Загадай бажання та задуй свічку! 💨</div>
-
   <div id="flameStatus">🔥 Полум'я палає</div>
-
-  <div id="handIndicator" class="indicator">
-    <span>👋</span>
-    <span>Покажіть долоню камері</span>
-  </div>
-
-  <button id="micBtn" aria-label="Мікрофон">🎤</button>
+  <div id="handIndicator">👋 Покажіть долоню камері</div>
+  <button id="micBtn">🎤</button>
 
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
     import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm";
 
+    // Конфігурація
     const CONFIG = {
-      SMOOTHING_FACTOR: 0.7,
-      HAND_NOT_DETECTED_THRESHOLD: 10,
-      PALM_SCALE_FACTOR: 0.8,
-      MIN_CAKE_SIZE: 100,
-      MAX_CAKE_SIZE: 250,
-      FLAME_BLOWOUT_THRESHOLD: 0.5
+      SMOOTHING_FACTOR: 0.5,
+      HAND_NOT_DETECTED_THRESHOLD: 30,
+      CAKE_SCALE: 0.15,
+      CANDLE_HEIGHT: 0.2,
+      FLAME_BLOWOUT_THRESHOLD: 0.4
     };
 
+    // Стан додатку
     const state = {
-      lastLandmarks: null,
-      smoothedLandmarks: null,
-      handNotDetectedCount: 0,
-      animationFrameId: null,
-      palmCenter: { x: 0, y: 0 },
-      palmSize: 1.0,
+      landmarks: null,
+      isHandVisible: false,
+      handFrames: 0,
       isFlameLit: true,
       isMicActive: false,
       audioContext: null,
       analyser: null,
-      microphone: null,
-      dataArray: null,
-      isAudioUnlocked: false,
-      isCakeVisible: false
+      animationId: null
     };
 
+    // DOM елементи
     const elements = {
-      video: document.getElementById("video"),
-      canvas: document.getElementById("canvas"),
-      confettiCanvas: document.getElementById("confettiCanvas"),
-      loading: document.getElementById("loading"),
-      loadingText: document.getElementById("loadingText"),
-      micBtn: document.getElementById("micBtn"),
-      handIndicator: document.getElementById("handIndicator"),
-      wishText: document.getElementById("wishText"),
-      flameStatus: document.getElementById("flameStatus")
+      video: document.getElementById('video'),
+      canvas: document.getElementById('canvas'),
+      confettiCanvas: document.getElementById('confettiCanvas'),
+      loading: document.getElementById('loading'),
+      wishText: document.getElementById('wishText'),
+      flameStatus: document.getElementById('flameStatus'),
+      handIndicator: document.getElementById('handIndicator'),
+      micBtn: document.getElementById('micBtn')
     };
 
-    const confettiCtx = elements.confettiCanvas.getContext("2d");
-    let confetti = [];
-
-    // Аудіо - створюємо через Web Audio API для кращої сумісності
-    let audioBlow, audioCelebration;
-
+    // Three.js змінні
     let scene, camera, renderer;
-    let cakeMesh, candleMesh, flameMesh, flameLight;
-    let cakeTexture;
+    let cake, candle, flame;
     let handLandmarker;
 
-    class CakeARApplication {
-      constructor() { 
-        this.init(); 
+    // Клас додатку
+    class CakeARApp {
+      constructor() {
+        this.init();
       }
 
       async init() {
         try {
-          this.setupEventListeners();
           await this.setupCamera();
-          await this.initWebGL();
-          await this.setupHandTracking();
-          await this.loadCakeTexture();
-          this.setupAudio();
+          await this.initThreeJS();
+          await this.initHandTracking();
+          this.setupEventListeners();
           this.hideLoading();
-          this.startRenderLoop();
-          this.unlockAudio();
+          this.startAnimation();
         } catch (error) {
-          this.handleError(error);
+          console.error('Помилка ініціалізації:', error);
+          this.showError('Не вдалося запустити додаток. Спробуйте оновити сторінку.');
         }
-      }
-
-      unlockAudio() {
-        const unlock = () => {
-          if (state.isAudioUnlocked) return;
-          state.isAudioUnlocked = true;
-          document.removeEventListener('click', unlock);
-          document.removeEventListener('touchstart', unlock);
-        };
-        document.addEventListener('click', unlock, { once: true });
-        document.addEventListener('touchstart', unlock, { once: true });
-      }
-
-      setupAudio() {
-        if (!state.audioContext) {
-          state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        
-        // Створюємо аудіо буфери для звуків
-        this.createAudioBuffers();
-      }
-
-      async createAudioBuffers() {
-        // Прості звуки через осцилятори
-        // Можна замінити на реальні звукові файли
-      }
-
-      async initMicrophone() {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-            audio: {
-              echoCancellation: false,
-              noiseSuppression: false,
-              autoGainControl: false
-            } 
-          });
-          
-          state.microphone = state.audioContext.createMediaStreamSource(stream);
-          state.analyser = state.audioContext.createAnalyser();
-          state.analyser.fftSize = 2048;
-          state.analyser.smoothingTimeConstant = 0.3;
-          state.microphone.connect(state.analyser);
-          state.dataArray = new Uint8Array(state.analyser.frequencyBinCount);
-          
-          state.isMicActive = true;
-          elements.micBtn.style.background = '#ff6b95';
-          elements.micBtn.style.color = 'white';
-          
-          this.analyzeMicrophone();
-          
-        } catch (error) {
-          console.error('Microphone error:', error);
-          alert('Дозвольте доступ до мікрофона');
-        }
-      }
-
-      analyzeMicrophone() {
-        if (!state.isMicActive || !state.analyser || !state.isFlameLit) return;
-        
-        state.analyser.getByteFrequencyData(state.dataArray);
-        let sum = 0;
-        for (let i = 0; i < state.dataArray.length; i++) {
-          sum += state.dataArray[i];
-        }
-        const avg = sum / state.dataArray.length;
-        const volume = Math.min(1, avg / 128);
-        
-        if (volume > CONFIG.FLAME_BLOWOUT_THRESHOLD && state.isFlameLit) {
-          this.blowOutCandle();
-        }
-        
-        if (state.isFlameLit && flameMesh) {
-          const flicker = 1 + Math.sin(Date.now() * 0.01) * 0.1 + volume * 0.2;
-          flameMesh.scale.set(flicker, flicker, flicker);
-          
-          const hue = 20 + volume * 10;
-          flameMesh.material.color.setHSL(hue/360, 1, 0.5);
-        }
-        
-        requestAnimationFrame(() => this.analyzeMicrophone());
-      }
-
-      stopMicrophone() {
-        if (state.microphone && state.microphone.mediaStream) {
-          state.microphone.mediaStream.getTracks().forEach(track => track.stop());
-        }
-        state.isMicActive = false;
-        state.analyser = null;
-        state.microphone = null;
-        elements.micBtn.style.background = 'rgba(255, 255, 255, 0.9)';
-        elements.micBtn.style.color = '#ff6b95';
-      }
-
-      setupEventListeners() {
-        elements.micBtn.addEventListener('click', () => this.toggleMicrophone());
-        window.addEventListener('resize', () => this.handleResize());
-        window.addEventListener('beforeunload', () => this.cleanup());
       }
 
       async setupCamera() {
         try {
-          const constraints = { 
-            video: { 
-              facingMode: "environment", 
-              width: { ideal: 1280 }, 
-              height: { ideal: 720 }, 
-              frameRate: { ideal: 30 } 
-            } 
-          };
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'environment',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          });
           elements.video.srcObject = stream;
-          await new Promise(r => { 
-            elements.video.onloadedmetadata = () => { 
-              elements.video.play(); 
-              r(); 
-            }; 
+          await new Promise(resolve => {
+            elements.video.onloadedmetadata = () => {
+              elements.video.play();
+              resolve();
+            };
           });
         } catch (error) {
-          console.error('Camera setup failed:', error);
-          throw new Error('CAMERA_ERROR');
+          throw new Error('Не вдалося отримати доступ до камери');
         }
       }
 
-      async initWebGL() {
+      async initThreeJS() {
+        // Створюємо сцену
         scene = new THREE.Scene();
-        camera = new THREE.OrthographicCamera(
-          -window.innerWidth / 2, 
-          window.innerWidth / 2, 
-          window.innerHeight / 2, 
-          -window.innerHeight / 2, 
+        
+        // Камера, що відповідає розміру екрану
+        camera = new THREE.PerspectiveCamera(
+          60, 
+          window.innerWidth / window.innerHeight, 
           0.1, 
           1000
         );
-        camera.position.z = 10;
+        camera.position.set(0, 0, 5);
         
-        renderer = new THREE.WebGLRenderer({ 
-          canvas: elements.canvas, 
-          alpha: true, 
-          antialias: true, 
-          powerPreference: "high-performance" 
+        // Рендерер
+        renderer = new THREE.WebGLRenderer({
+          canvas: elements.canvas,
+          alpha: true,
+          antialias: true
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(window.devicePixelRatio);
         
-        // Додамо базове освітлення
+        // Освітлення
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
         
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(1, 1, 1);
+        directionalLight.position.set(5, 5, 5);
         scene.add(directionalLight);
         
+        // Створюємо торт
         this.createCake();
-        this.createCandle();
       }
 
       createCake() {
-        const geometry = new THREE.CylinderGeometry(1, 1.2, 0.3, 32);
-        const material = new THREE.MeshPhongMaterial({ 
-          color: 0xffffff,
-          shininess: 30,
-          transparent: true,
-          side: THREE.DoubleSide
+        // Основа торта (циліндр)
+        const cakeGeometry = new THREE.CylinderGeometry(1, 1.2, 0.4, 32);
+        const cakeMaterial = new THREE.MeshPhongMaterial({ 
+          color: 0xf8a5c2,
+          shininess: 30
         });
-        cakeMesh = new THREE.Mesh(geometry, material);
-        cakeMesh.visible = false;
-        scene.add(cakeMesh);
-      }
-
-      createCandle() {
+        cake = new THREE.Mesh(cakeGeometry, cakeMaterial);
+        cake.position.y = -1;
+        cake.visible = false;
+        scene.add(cake);
+        
         // Свічка
-        const candleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.4, 16);
-        const candleMaterial = new THREE.MeshPhongMaterial({ 
-          color: 0xffffff,
-          shininess: 100
-        });
-        candleMesh = new THREE.Mesh(candleGeometry, candleMaterial);
-        candleMesh.position.y = 0.2;
-        candleMesh.visible = false;
+        const candleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);
+        const candleMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        candle = new THREE.Mesh(candleGeometry, candleMaterial);
+        candle.position.set(0, 0.2, 0);
+        candle.visible = false;
+        cake.add(candle);
         
         // Полум'я
-        const flameGeometry = new THREE.ConeGeometry(0.08, 0.2, 16);
+        const flameGeometry = new THREE.ConeGeometry(0.06, 0.15, 16);
         const flameMaterial = new THREE.MeshPhongMaterial({ 
-          color: 0xff4500,
-          emissive: 0xff4500,
+          color: 0xff5500,
+          emissive: 0xff3300,
           emissiveIntensity: 0.5,
-          transparent: true,
-          opacity: 0.9
+          transparent: true
         });
-        flameMesh = new THREE.Mesh(flameGeometry, flameMaterial);
-        flameMesh.position.y = 0.45;
-        flameMesh.visible = false;
+        flame = new THREE.Mesh(flameGeometry, flameMaterial);
+        flame.position.set(0, 0.35, 0);
+        flame.visible = false;
+        cake.add(flame);
         
         // Світло від полум'я
-        flameLight = new THREE.PointLight(0xff4500, 1, 5);
-        flameLight.position.y = 0.45;
-        flameLight.visible = false;
+        const flameLight = new THREE.PointLight(0xff5500, 1, 2);
+        flameLight.position.set(0, 0.35, 0);
+        cake.add(flameLight);
+      }
+
+      async initHandTracking() {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+        );
         
-        scene.add(candleMesh);
-        scene.add(flameMesh);
-        scene.add(flameLight);
-      }
-
-      async setupHandTracking() {
-        try {
-          const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-          );
-          handLandmarker = await HandLandmarker.createFromOptions(vision, {
-            baseOptions: { 
-              modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task", 
-              delegate: "GPU" 
-            },
-            runningMode: "VIDEO",
-            numHands: 1
-          });
-        } catch (error) {
-          console.error('Hand tracking setup failed:', error);
-          throw error;
-        }
-      }
-
-      async loadCakeTexture() {
-        return new Promise((resolve) => {
-          const textureLoader = new THREE.TextureLoader();
-          textureLoader.load(
-            'foto.png',
-            (texture) => {
-              cakeTexture = texture;
-              cakeTexture.minFilter = THREE.LinearFilter;
-              cakeTexture.magFilter = THREE.LinearFilter;
-              if (cakeMesh && cakeMesh.material) {
-                cakeMesh.material.map = cakeTexture;
-                cakeMesh.material.needsUpdate = true;
-              }
-              resolve();
-            },
-            undefined,
-            () => {
-              // Якщо файл не знайдено, створюємо просту текстуру
-              console.log('Creating fallback cake texture');
-              const canvas = document.createElement('canvas');
-              canvas.width = 256; 
-              canvas.height = 256;
-              const ctx = canvas.getContext('2d');
-              const gradient = ctx.createLinearGradient(0, 0, 256, 256);
-              gradient.addColorStop(0, '#ff9a9e');
-              gradient.addColorStop(1, '#fad0c4');
-              ctx.fillStyle = gradient;
-              ctx.fillRect(0, 0, 256, 256);
-              ctx.fillStyle = 'white';
-              ctx.font = 'bold 48px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText('🎂', 128, 150);
-              
-              cakeTexture = new THREE.CanvasTexture(canvas);
-              if (cakeMesh && cakeMesh.material) {
-                cakeMesh.material.map = cakeTexture;
-                cakeMesh.material.needsUpdate = true;
-              }
-              resolve();
-            }
-          );
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+            delegate: "GPU"
+          },
+          runningMode: "VIDEO",
+          numHands: 1
         });
       }
 
-      startRenderLoop() {
-        const render = () => {
-          this.detectHands();
-          this.updateCakePosition();
-          this.updateConfetti();
-          
-          // Анімація полум'я
-          if (state.isFlameLit && flameMesh && state.isCakeVisible) {
-            const time = Date.now() * 0.001;
-            flameMesh.position.y = 0.45 + Math.sin(time * 5) * 0.02;
-            flameMesh.scale.x = flameMesh.scale.y = 1 + Math.sin(time * 8) * 0.1;
-            if (flameLight) {
-              flameLight.intensity = 0.8 + Math.sin(time * 6) * 0.2;
-            }
-          }
-          
-          // Рендер сцени
-          if (renderer && scene && camera) {
-            renderer.render(scene, camera);
-          }
-          
-          state.animationFrameId = requestAnimationFrame(render);
-        };
-        render();
-      }
-
-      updateCakePosition() {
-        if (!state.lastLandmarks || !cakeMesh) return;
+      setupEventListeners() {
+        // Кнопка мікрофона
+        elements.micBtn.addEventListener('click', () => this.toggleMicrophone());
         
-        const screenX = state.palmCenter.x * window.innerWidth;
-        const screenY = (1 - state.palmCenter.y) * window.innerHeight;
-        
-        const cakeSize = Math.max(
-          CONFIG.MIN_CAKE_SIZE, 
-          Math.min(CONFIG.MAX_CAKE_SIZE, state.palmSize * CONFIG.PALM_SCALE_FACTOR * 150)
-        );
-        
-        // Позиціонуємо торт
-        cakeMesh.position.set(
-          screenX - window.innerWidth / 2,
-          screenY - window.innerHeight / 2,
-          0
-        );
-        cakeMesh.scale.set(cakeSize, cakeSize * 0.3, cakeSize);
-        
-        // Позиціонуємо свічку
-        if (candleMesh) {
-          candleMesh.position.set(
-            screenX - window.innerWidth / 2,
-            (screenY - window.innerHeight / 2) + cakeSize * 0.15,
-            0
-          );
-          candleMesh.scale.set(cakeSize * 0.1, cakeSize * 0.4, cakeSize * 0.1);
-          candleMesh.visible = state.isFlameLit;
-        }
-        
-        // Позиціонуємо полум'я
-        if (flameMesh) {
-          flameMesh.position.set(
-            screenX - window.innerWidth / 2,
-            (screenY - window.innerHeight / 2) + cakeSize * 0.15 + cakeSize * 0.2,
-            0
-          );
-          flameMesh.scale.set(cakeSize * 0.05, cakeSize * 0.1, cakeSize * 0.05);
-          flameMesh.visible = state.isFlameLit;
-        }
-        
-        // Позиціонуємо світло
-        if (flameLight) {
-          flameLight.position.set(
-            screenX - window.innerWidth / 2,
-            (screenY - window.innerHeight / 2) + cakeSize * 0.15 + cakeSize * 0.2,
-            0
-          );
-          flameLight.visible = state.isFlameLit;
-        }
-      }
-
-      updateConfetti() {
-        confetti = confetti.filter(p => p.life > 0);
-        confetti.forEach(p => p.update());
-        confettiCtx.clearRect(0, 0, elements.confettiCanvas.width, elements.confettiCanvas.height);
-        confetti.forEach(p => p.draw(confettiCtx));
-      }
-
-      detectHands() {
-        if (!handLandmarker || elements.video.readyState < 2) return;
-        
-        try {
-          const predictions = handLandmarker.detectForVideo(elements.video, performance.now());
-          if (predictions.landmarks && predictions.landmarks.length > 0) {
-            state.handNotDetectedCount = 0;
-            this.hideHandIndicator();
-            
-            const landmarks = predictions.landmarks[0];
-            state.lastLandmarks = this.smoothLandmarks(landmarks);
-            this.calculatePalmCenter(landmarks);
-            
-            if (!state.isCakeVisible) {
-              state.isCakeVisible = true;
-              cakeMesh.visible = true;
-              elements.wishText.style.display = 'block';
-              elements.flameStatus.style.display = 'block';
-            }
-            
-          } else {
-            state.handNotDetectedCount++;
-            if (state.handNotDetectedCount > CONFIG.HAND_NOT_DETECTED_THRESHOLD) {
-              this.showHandIndicator();
-              this.hideCake();
-              state.isCakeVisible = false;
-              elements.wishText.style.display = 'none';
-              elements.flameStatus.style.display = 'none';
-            }
-          }
-        } catch (error) {
-          console.error('Hand detection error:', error);
-        }
-      }
-
-      calculatePalmCenter(landmarks) {
-        const wrist = landmarks[0];
-        const basePoints = [5, 9, 13, 17];
-        
-        let sumX = wrist.x;
-        let sumY = wrist.y;
-        
-        basePoints.forEach(idx => {
-          sumX += landmarks[idx].x;
-          sumY += landmarks[idx].y;
-        });
-        
-        state.palmCenter = {
-          x: sumX / (basePoints.length + 1),
-          y: sumY / (basePoints.length + 1)
-        };
-        
-        const middleBase = landmarks[9];
-        const distance = Math.sqrt(
-          Math.pow(wrist.x - middleBase.x, 2) + 
-          Math.pow(wrist.y - middleBase.y, 2)
-        );
-        
-        state.palmSize = Math.max(0.5, Math.min(2, distance * 10));
-      }
-
-      smoothLandmarks(newLandmarks) {
-        if (!state.smoothedLandmarks) {
-          state.smoothedLandmarks = newLandmarks.map(lm => ({ ...lm }));
-          return state.smoothedLandmarks;
-        }
-        
-        for (let i = 0; i < newLandmarks.length; i++) {
-          state.smoothedLandmarks[i].x = this.lerp(
-            state.smoothedLandmarks[i].x, 
-            newLandmarks[i].x, 
-            CONFIG.SMOOTHING_FACTOR
-          );
-          state.smoothedLandmarks[i].y = this.lerp(
-            state.smoothedLandmarks[i].y, 
-            newLandmarks[i].y, 
-            CONFIG.SMOOTHING_FACTOR
-          );
-        }
-        
-        return state.smoothedLandmarks;
-      }
-
-      lerp(start, end, factor) {
-        return start * (1 - factor) + end * factor;
-      }
-
-      hideCake() {
-        if (cakeMesh) cakeMesh.visible = false;
-        if (candleMesh) candleMesh.visible = false;
-        if (flameMesh) flameMesh.visible = false;
-        if (flameLight) flameLight.visible = false;
-      }
-
-      blowOutCandle() {
-        if (!state.isFlameLit) return;
-        
-        state.isFlameLit = false;
-        if (flameMesh) flameMesh.visible = false;
-        if (flameLight) flameLight.visible = false;
-        if (candleMesh) candleMesh.visible = false;
-        
-        // Відтворюємо звук задування
-        this.playBlowSound();
-        
-        elements.flameStatus.textContent = '🎉 Бажання збулося!';
-        elements.flameStatus.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
-        
-        this.triggerConfetti();
-        
-        // Через 3 секунди запалюємо свічку знову
-        setTimeout(() => {
-          this.relightCandle();
-        }, 3000);
-      }
-
-      playBlowSound() {
-        if (!state.audioContext || !state.isAudioUnlocked) return;
-        
-        try {
-          const oscillator = state.audioContext.createOscillator();
-          const gainNode = state.audioContext.createGain();
-          
-          oscillator.connect(gainNode);
-          gainNode.connect(state.audioContext.destination);
-          
-          oscillator.frequency.setValueAtTime(200, state.audioContext.currentTime);
-          oscillator.frequency.exponentialRampToValueAtTime(50, state.audioContext.currentTime + 0.5);
-          
-          gainNode.gain.setValueAtTime(0.3, state.audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, state.audioContext.currentTime + 0.5);
-          
-          oscillator.start();
-          oscillator.stop(state.audioContext.currentTime + 0.5);
-        } catch (e) {
-          console.log('Could not play blow sound:', e);
-        }
-      }
-
-      relightCandle() {
-        state.isFlameLit = true;
-        if (candleMesh) candleMesh.visible = true;
-        if (flameMesh) flameMesh.visible = true;
-        if (flameLight) flameLight.visible = true;
-        
-        elements.flameStatus.textContent = '🔥 Полум\'я палає';
-        elements.flameStatus.style.backgroundColor = 'rgba(255, 107, 107, 0.9)';
-      }
-
-      triggerConfetti() {
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        
-        for (let i = 0; i < 100; i++) {
-          confetti.push(new ConfettiParticle(centerX, centerY));
-        }
+        // Адаптація до розміру вікна
+        window.addEventListener('resize', () => this.onWindowResize());
       }
 
       toggleMicrophone() {
         if (state.isMicActive) {
           this.stopMicrophone();
         } else {
-          this.initMicrophone();
+          this.startMicrophone();
         }
       }
 
-      showHandIndicator() {
-        elements.handIndicator.classList.add('show');
+      async startMicrophone() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false
+            }
+          });
+          
+          state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const source = state.audioContext.createMediaStreamSource(stream);
+          state.analyser = state.audioContext.createAnalyser();
+          state.analyser.fftSize = 256;
+          source.connect(state.analyser);
+          
+          state.isMicActive = true;
+          elements.micBtn.style.background = '#ff6b95';
+          elements.micBtn.style.color = 'white';
+          
+        } catch (error) {
+          console.error('Помилка мікрофона:', error);
+          alert('Дозвольте доступ до мікрофона');
+        }
       }
 
-      hideHandIndicator() {
-        elements.handIndicator.classList.remove('show');
+      stopMicrophone() {
+        if (state.audioContext) {
+          state.audioContext.close();
+          state.audioContext = null;
+        }
+        state.analyser = null;
+        state.isMicActive = false;
+        elements.micBtn.style.background = '';
+        elements.micBtn.style.color = '';
+      }
+
+      checkMicrophoneVolume() {
+        if (!state.isMicActive || !state.analyser || !state.isFlameLit) return false;
+        
+        const dataArray = new Uint8Array(state.analyser.frequencyBinCount);
+        state.analyser.getByteFrequencyData(dataArray);
+        
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / dataArray.length;
+        
+        return average / 255 > CONFIG.FLAME_BLOWOUT_THRESHOLD;
+      }
+
+      startAnimation() {
+        const animate = () => {
+          this.update();
+          this.render();
+          state.animationId = requestAnimationFrame(animate);
+        };
+        animate();
+      }
+
+      update() {
+        // Визначаємо положення руки
+        this.detectHand();
+        
+        // Оновлюємо положення торта
+        if (state.landmarks && state.isHandVisible) {
+          this.updateCakePosition();
+          
+          if (!cake.visible) {
+            cake.visible = true;
+            candle.visible = state.isFlameLit;
+            flame.visible = state.isFlameLit;
+            elements.wishText.style.display = 'block';
+            elements.flameStatus.style.display = 'block';
+            elements.handIndicator.style.display = 'none';
+          }
+        } else {
+          if (cake.visible) {
+            cake.visible = false;
+            elements.wishText.style.display = 'none';
+            elements.flameStatus.style.display = 'none';
+          }
+          
+          if (state.handFrames > CONFIG.HAND_NOT_DETECTED_THRESHOLD) {
+            elements.handIndicator.style.display = 'flex';
+          }
+        }
+        
+        // Анімація полум'я
+        if (state.isFlameLit && flame.visible) {
+          const time = Date.now() * 0.001;
+          flame.scale.x = flame.scale.y = 1 + Math.sin(time * 10) * 0.1;
+          flame.position.y = 0.35 + Math.sin(time * 8) * 0.02;
+        }
+        
+        // Перевіряємо, чи задули свічку
+        if (this.checkMicrophoneVolume() && state.isFlameLit) {
+          this.blowOutCandle();
+        }
+      }
+
+      detectHand() {
+        if (!handLandmarker || elements.video.readyState < 2) return;
+        
+        try {
+          const results = handLandmarker.detectForVideo(elements.video, performance.now());
+          
+          if (results.landmarks && results.landmarks.length > 0) {
+            state.landmarks = results.landmarks[0];
+            state.isHandVisible = true;
+            state.handFrames = 0;
+          } else {
+            state.landmarks = null;
+            state.isHandVisible = false;
+            state.handFrames++;
+          }
+        } catch (error) {
+          console.error('Помилка розпізнавання руки:', error);
+        }
+      }
+
+      updateCakePosition() {
+        if (!state.landmarks || !cake) return;
+        
+        // Визначаємо центр долоні (середнє між зап'ястям та основами пальців)
+        const wrist = state.landmarks[0];
+        const indexBase = state.landmarks[5];
+        const middleBase = state.landmarks[9];
+        
+        const centerX = (wrist.x + indexBase.x + middleBase.x) / 3;
+        const centerY = (wrist.y + indexBase.y + middleBase.y) / 3;
+        
+        // Конвертуємо в координати Three.js
+        // Екранні координати (0-1) -> Three.js координати (-1 до 1)
+        const x = (centerX - 0.5) * 2;
+        const y = (0.5 - centerY) * 2; // Інвертуємо Y
+        
+        // Масштабуємо для кращого вигляду
+        cake.position.x = x * 3;
+        cake.position.y = y * 2 - 1; // Зсуваємо трохи нижче
+        cake.position.z = 0;
+        
+        // Обертаємо торт до камери
+        cake.lookAt(camera.position);
+      }
+
+      blowOutCandle() {
+        state.isFlameLit = false;
+        candle.visible = false;
+        flame.visible = false;
+        
+        // Оновлюємо статус
+        elements.flameStatus.textContent = '🎉 Бажання збулося!';
+        elements.flameStatus.style.background = 'rgba(76, 175, 80, 0.9)';
+        
+        // Запускаємо конфеті
+        this.createConfetti();
+        
+        // Через 3 секунди запалюємо знову
+        setTimeout(() => {
+          this.relightCandle();
+        }, 3000);
+      }
+
+      relightCandle() {
+        state.isFlameLit = true;
+        candle.visible = true;
+        flame.visible = true;
+        
+        elements.flameStatus.textContent = '🔥 Полум\'я палає';
+        elements.flameStatus.style.background = 'rgba(255, 107, 107, 0.9)';
+      }
+
+      createConfetti() {
+        const ctx = elements.confettiCanvas.getContext('2d');
+        const particles = [];
+        const colors = ['#ff6b95', '#ffd166', '#06d6a0', '#118ab2', '#ef476f'];
+        
+        // Створюємо частки конфеті
+        for (let i = 0; i < 100; i++) {
+          particles.push({
+            x: Math.random() * elements.confettiCanvas.width,
+            y: Math.random() * elements.confettiCanvas.height,
+            size: Math.random() * 10 + 5,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speedX: Math.random() * 6 - 3,
+            speedY: Math.random() * -10 - 5,
+            gravity: 0.2,
+            opacity: 1
+          });
+        }
+        
+        // Анімація конфеті
+        let frames = 0;
+        const animateConfetti = () => {
+          ctx.clearRect(0, 0, elements.confettiCanvas.width, elements.confettiCanvas.height);
+          
+          for (let particle of particles) {
+            particle.speedY += particle.gravity;
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.opacity -= 0.01;
+            
+            ctx.save();
+            ctx.globalAlpha = particle.opacity;
+            ctx.fillStyle = particle.color;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+          
+          frames++;
+          if (frames < 100) {
+            requestAnimationFrame(animateConfetti);
+          }
+        };
+        
+        animateConfetti();
+      }
+
+      render() {
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+        }
+      }
+
+      onWindowResize() {
+        if (camera && renderer) {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          
+          // Оновлюємо розмір canvas для конфеті
+          elements.confettiCanvas.width = window.innerWidth;
+          elements.confettiCanvas.height = window.innerHeight;
+        }
       }
 
       hideLoading() {
@@ -783,84 +582,39 @@
         elements.canvas.style.display = 'block';
         elements.confettiCanvas.width = window.innerWidth;
         elements.confettiCanvas.height = window.innerHeight;
+        elements.handIndicator.style.display = 'flex';
       }
 
-      handleResize() {
-        if (!camera || !renderer) return;
-        
-        camera.left = -window.innerWidth / 2;
-        camera.right = window.innerWidth / 2;
-        camera.top = window.innerHeight / 2;
-        camera.bottom = -window.innerHeight / 2;
-        camera.updateProjectionMatrix();
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        elements.confettiCanvas.width = window.innerWidth;
-        elements.confettiCanvas.height = window.innerHeight;
-      }
-
-      handleError(error) {
-        console.error('App error:', error);
+      showError(message) {
         elements.loading.innerHTML = `
           <div style="color: #ff4757; font-size: 24px; margin-bottom: 20px;">Помилка</div>
-          <div style="color: #666; font-size: 18px; margin-bottom: 20px; line-height: 1.4;">
-            ${error.message || 'Помилка завантаження'}
-          </div>
-          <button id="errorRetry" style="padding: 12px 24px; background: #ff6b95; color: white; border: none; border-radius: 25px; cursor: pointer;">
+          <div style="color: #666; margin-bottom: 20px;">${message}</div>
+          <button onclick="location.reload()" style="padding: 12px 24px; background: #ff6b95; color: white; border: none; border-radius: 25px; cursor: pointer;">
             Спробувати знову
           </button>
         `;
-        
-        document.getElementById('errorRetry').addEventListener('click', () => location.reload());
       }
 
       cleanup() {
-        if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
+        if (state.animationId) {
+          cancelAnimationFrame(state.animationId);
+        }
         if (elements.video.srcObject) {
           elements.video.srcObject.getTracks().forEach(track => track.stop());
         }
-        if (handLandmarker) handLandmarker.close();
+        if (handLandmarker) {
+          handLandmarker.close();
+        }
         this.stopMicrophone();
       }
     }
 
-    class ConfettiParticle {
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.vx = (Math.random() - 0.5) * 8;
-        this.vy = Math.random() * -15 - 5;
-        this.size = Math.random() * 6 + 4;
-        this.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
-        this.life = 1.0;
-        this.gravity = 0.4;
-        this.rotation = Math.random() * Math.PI * 2;
-        this.spin = (Math.random() - 0.5) * 0.3;
-      }
+    // Ініціалізація при завантаженні сторінки
+    window.addEventListener('DOMContentLoaded', () => {
+      const app = new CakeARApp();
       
-      update() {
-        this.vy += this.gravity;
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= 0.015;
-        this.rotation += this.spin;
-      }
-      
-      draw(ctx) {
-        if (this.life <= 0) return;
-        ctx.save();
-        ctx.globalAlpha = this.life;
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        ctx.fillStyle = this.color;
-        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-        ctx.restore();
-      }
-    }
-
-    // Ініціалізація додатку після завантаження сторінки
-    document.addEventListener('DOMContentLoaded', () => {
-      new CakeARApplication();
+      // Очищення при закритті
+      window.addEventListener('beforeunload', () => app.cleanup());
     });
   </script>
 </body>
