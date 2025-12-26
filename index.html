@@ -12,7 +12,7 @@
       touch-action: manipulation;
     }
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%);
       overflow: hidden;
       font-family: 'Arial', 'Segoe UI', system-ui, sans-serif;
       color: white;
@@ -34,7 +34,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -48,7 +48,7 @@
       width: 60px;
       height: 60px;
       border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid white;
+      border-top: 4px solid #FFD700;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 20px;
@@ -59,7 +59,7 @@
       bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       color: #FFD700;
       padding: 15px 25px;
       border-radius: 20px;
@@ -71,7 +71,8 @@
       display: none;
       max-width: 90%;
       backdrop-filter: blur(10px);
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     #handIndicator {
@@ -79,34 +80,37 @@
       top: 30px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 12px 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #FFD700;
+      padding: 15px 25px;
       border-radius: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      border: 2px solid rgba(255, 215, 0, 0.5);
       display: none;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       z-index: 99;
-      font-size: 16px;
+      font-size: 17px;
+      font-weight: bold;
       backdrop-filter: blur(10px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
 
     #flameStatus {
       position: fixed;
-      top: 80px;
+      top: 85px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255, 69, 0, 0.9);
+      background: linear-gradient(135deg, #FF4500 0%, #FF6347 100%);
       color: white;
-      padding: 10px 20px;
+      padding: 12px 24px;
       border-radius: 20px;
-      font-size: 16px;
+      font-size: 17px;
       z-index: 100;
       display: none;
       backdrop-filter: blur(10px);
       border: 2px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 15px rgba(255, 69, 0, 0.7);
+      box-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
 
     #micBtn {
@@ -114,24 +118,24 @@
       bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
-      width: 70px;
-      height: 70px;
+      width: 75px;
+      height: 75px;
       border-radius: 50%;
-      background: rgba(255, 69, 0, 0.9);
+      background: linear-gradient(135deg, #FF4500 0%, #FF6347 100%);
       border: 3px solid #FFD700;
       color: white;
-      font-size: 30px;
+      font-size: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       z-index: 100;
-      box-shadow: 0 0 25px rgba(255, 69, 0, 0.8);
+      box-shadow: 0 0 30px rgba(255, 69, 0, 0.9);
       transition: all 0.3s ease;
     }
     #micBtn:hover {
-      transform: translateX(-50%) scale(1.1);
-      box-shadow: 0 0 35px rgba(255, 69, 0, 1);
+      transform: translateX(-50%) scale(1.15);
+      box-shadow: 0 0 40px rgba(255, 69, 0, 1);
     }
 
     @keyframes spin { 
@@ -140,20 +144,16 @@
     }
     @keyframes flameFlicker {
       0%, 100% { 
-        transform: translateY(0) scale(1); 
-        opacity: 0.9; 
+        transform: scale(1) translateY(0); 
+        opacity: 0.95; 
       }
-      25% { 
-        transform: translateY(-2px) scale(1.1); 
+      33% { 
+        transform: scale(1.1) translateY(-1px); 
         opacity: 1; 
       }
-      50% { 
-        transform: translateY(1px) scale(0.95); 
-        opacity: 0.8; 
-      }
-      75% { 
-        transform: translateY(-1px) scale(1.05); 
-        opacity: 0.95; 
+      66% { 
+        transform: scale(0.95) translateY(1px); 
+        opacity: 0.9; 
       }
     }
   </style>
@@ -161,8 +161,8 @@
 <body>
   <div id="loading">
     <div class="loader"></div>
-    <div>🎂 Завантаження...</div>
-    <p style="margin-top: 20px; color: rgba(255,255,255,0.8);">Покажіть долоню камері</p>
+    <div style="font-size: 1.5em; margin-bottom: 10px;">🎂 Завантаження...</div>
+    <p style="margin-top: 20px; color: rgba(255,255,255,0.9);">Покажіть долоню камері</p>
   </div>
 
   <video id="video" playsinline muted></video>
@@ -181,10 +181,9 @@
     const CONFIG = {
       SMOOTHING_FACTOR: 0.6,
       HAND_NOT_DETECTED_THRESHOLD: 30,
-      CAKE_SCALE: 0.15,
-      CANDLE_HEIGHT: 0.3,
-      FLAME_HEIGHT: 0.4,
-      FLAME_BLOWOUT_THRESHOLD: 0.35
+      FLAME_BLOWOUT_THRESHOLD: 0.4,
+      CAKE_SCALE: 0.5,
+      CANDLE_HEIGHT: 0.5
     };
 
     // Стан додатку
@@ -213,7 +212,7 @@
 
     // Three.js змінні
     let scene, camera, renderer;
-    let cakeSprite, candle, flame;
+    let cakeSprite, candle, flameGroup;
     let handLandmarker;
 
     class CakeARApp {
@@ -259,6 +258,7 @@
       async initThreeJS() {
         // Створюємо сцену
         scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x8A2BE2, 5, 15);
         
         // Камера
         camera = new THREE.PerspectiveCamera(
@@ -278,11 +278,19 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         
-        // Завантажуємо PNG торта як спрайт
+        // Освітлення
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+        
+        // Завантажуємо PNG торта
         await this.loadCakeSprite();
         
-        // Створюємо свічку з полум'ям
-        this.createCandle();
+        // Створюємо гарну свічку з природним полум'ям
+        this.createBeautifulCandle();
       }
 
       async loadCakeSprite() {
@@ -300,7 +308,7 @@
               });
               
               cakeSprite = new THREE.Sprite(spriteMaterial);
-              cakeSprite.scale.set(2, 2, 1); // Масштаб спрайта
+              cakeSprite.scale.set(3, 3, 1);
               cakeSprite.visible = false;
               scene.add(cakeSprite);
               resolve();
@@ -308,7 +316,6 @@
             undefined,
             (error) => {
               console.error('Помилка завантаження фото:', error);
-              // Створюємо запасний спрайт
               this.createFallbackSprite();
               resolve();
             }
@@ -317,25 +324,25 @@
       }
 
       createFallbackSprite() {
-        // Створюємо простий спрайт як запасний варіант
         const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 256;
+        canvas.width = 512;
+        canvas.height = 512;
         const ctx = canvas.getContext('2d');
         
-        // Градієнтний фон
-        const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        // Красивий градієнт для торта
+        const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
         gradient.addColorStop(0, '#ff9a9e');
-        gradient.addColorStop(1, '#fad0c4');
+        gradient.addColorStop(0.5, '#fad0c4');
+        gradient.addColorStop(1, '#fbc2eb');
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillRect(0, 0, 512, 512);
         
-        // Текст торта
+        // Декорації
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 60px Arial';
+        ctx.font = 'bold 100px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('🎂', 128, 128);
+        ctx.fillText('🎂', 256, 256);
         
         const texture = new THREE.CanvasTexture(canvas);
         const spriteMaterial = new THREE.SpriteMaterial({ 
@@ -344,82 +351,132 @@
         });
         
         cakeSprite = new THREE.Sprite(spriteMaterial);
-        cakeSprite.scale.set(2, 2, 1);
+        cakeSprite.scale.set(3, 3, 1);
         cakeSprite.visible = false;
         scene.add(cakeSprite);
       }
 
-      createCandle() {
-        // Свічка (білий циліндр)
-        const candleGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.3, 16);
-        const candleMaterial = new THREE.MeshPhongMaterial({ 
-          color: 0xffffff,
-          shininess: 100,
-          specular: 0x222222
-        });
-        candle = new THREE.Mesh(candleGeometry, candleMaterial);
-        candle.position.y = 1.2; // Вище торта
+      createBeautifulCandle() {
+        // Група для всієї свічки
+        candle = new THREE.Group();
         candle.visible = false;
         scene.add(candle);
         
-        // Створюємо складне полум'я з трьома шарами
-        this.createComplexFlame();
+        // ТІЛО СВІЧКИ - гарне, не чорне!
+        const candleBodyGeometry = new THREE.CylinderGeometry(0.06, 0.07, 0.4, 32);
+        const candleBodyMaterial = new THREE.MeshPhongMaterial({
+          color: 0xF5F5DC, // Світло-бежевий колір (як справжня свічка)
+          shininess: 100,
+          specular: 0x444444,
+          emissive: 0x222222,
+          emissiveIntensity: 0.1
+        });
+        const candleBody = new THREE.Mesh(candleBodyGeometry, candleBodyMaterial);
+        candleBody.position.y = 0.2; // Піднімаємо трохи
+        candle.add(candleBody);
         
-        // Світло від полум'я
-        const flameLight = new THREE.PointLight(0xff5500, 2, 3);
-        flameLight.position.set(0, 1.6, 0);
-        flameLight.visible = false;
-        scene.add(flameLight);
+        // ТЕКСТУРА СВІЧКИ (легкі вертикальні смуги)
+        const candleStripes = new THREE.CylinderGeometry(0.061, 0.071, 0.41, 32, 1, true);
+        const stripeMaterial = new THREE.MeshBasicMaterial({
+          color: 0xE8E8E8,
+          transparent: true,
+          opacity: 0.3,
+          side: THREE.DoubleSide
+        });
+        const stripes = new THREE.Mesh(candleStripes, stripeMaterial);
+        stripes.position.y = 0.2;
+        candle.add(stripes);
+        
+        // ГНІТ (сірий, короткий)
+        const wickGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.03, 8);
+        const wickMaterial = new THREE.MeshPhongMaterial({
+          color: 0x333333,
+          emissive: 0x111111,
+          emissiveIntensity: 0.2
+        });
+        const wick = new THREE.Mesh(wickGeometry, wickMaterial);
+        wick.position.y = 0.42; // На самому верху свічки
+        candle.add(wick);
+        
+        // ПОЛУМ'Я - природне, не трикутне
+        this.createNaturalFlame();
+        
+        // СВІТЛО ВІД ПОЛУМ'Я (ближче до свічки)
+        const flameLight = new THREE.PointLight(0xFFA500, 1.5, 2.5);
+        flameLight.position.set(0, 0.48, 0);
         candle.add(flameLight);
       }
 
-      createComplexFlame() {
-        // Група для полум'я
-        flame = new THREE.Group();
-        flame.position.y = 1.5; // Над свічкою
-        flame.visible = false;
+      createNaturalFlame() {
+        // Група для всього полум'я
+        flameGroup = new THREE.Group();
+        flameGroup.position.y = 0.46; // БЛИЖЧЕ до свічки!
+        flameGroup.visible = false;
+        candle.add(flameGroup);
         
-        // Внутрішнє полум'я (жовте)
-        const innerFlameGeometry = new THREE.ConeGeometry(0.06, 0.25, 16);
+        // ОСНОВНЕ ПОЛУМ'Я (яйцеподібна форма, не трикутна)
+        const flameShape = new THREE.Shape();
+        flameShape.moveTo(0, 0);
+        flameShape.bezierCurveTo(0.05, 0.1, 0.04, 0.3, 0, 0.4);
+        flameShape.bezierCurveTo(-0.04, 0.3, -0.05, 0.1, 0, 0);
+        
+        const flameGeometry = new THREE.ExtrudeGeometry(flameShape, {
+            depth: 0.02,
+            bevelEnabled: false,
+            curveSegments: 32
+        });
+        flameGeometry.rotateX(Math.PI / 2);
+        flameGeometry.translate(0, 0.2, 0);
+        
+        // ВНУТРІШНЄ ПОЛУМ'Я (яскраво-жовте)
         const innerFlameMaterial = new THREE.MeshPhongMaterial({
-          color: 0xffff00,
-          emissive: 0xffaa00,
-          emissiveIntensity: 1.5,
-          transparent: true,
-          opacity: 0.9
+            color: 0xFFFF00,
+            emissive: 0xFFAA00,
+            emissiveIntensity: 1.5,
+            transparent: true,
+            opacity: 0.95,
+            shininess: 100
         });
-        const innerFlame = new THREE.Mesh(innerFlameGeometry, innerFlameMaterial);
+        const innerFlame = new THREE.Mesh(flameGeometry, innerFlameMaterial);
+        innerFlame.scale.set(1.2, 1, 1);
+        flameGroup.add(innerFlame);
         
-        // Середнє полум'я (оранжеве)
-        const middleFlameGeometry = new THREE.ConeGeometry(0.08, 0.3, 16);
+        // СЕРЕДНЄ ПОЛУМ'Я (оранжеве)
         const middleFlameMaterial = new THREE.MeshPhongMaterial({
-          color: 0xff8800,
-          emissive: 0xff6600,
-          emissiveIntensity: 1.2,
-          transparent: true,
-          opacity: 0.7
+            color: 0xFF8800,
+            emissive: 0xFF6600,
+            emissiveIntensity: 1.2,
+            transparent: true,
+            opacity: 0.7,
+            shininess: 80
         });
-        const middleFlame = new THREE.Mesh(middleFlameGeometry, middleFlameMaterial);
-        middleFlame.position.y = -0.02;
+        const middleFlame = new THREE.Mesh(flameGeometry, middleFlameMaterial);
+        middleFlame.scale.set(1.4, 1.1, 1);
+        flameGroup.add(middleFlame);
         
-        // Зовнішнє полум'я (червоне)
-        const outerFlameGeometry = new THREE.ConeGeometry(0.1, 0.35, 16);
+        // ЗОВНІШНЄ ПОЛУМ'Я (червоне)
         const outerFlameMaterial = new THREE.MeshPhongMaterial({
-          color: 0xff3300,
-          emissive: 0xff2200,
-          emissiveIntensity: 1.0,
-          transparent: true,
-          opacity: 0.5
+            color: 0xFF3300,
+            emissive: 0xFF2200,
+            emissiveIntensity: 1.0,
+            transparent: true,
+            opacity: 0.5,
+            shininess: 60
         });
-        const outerFlame = new THREE.Mesh(outerFlameGeometry, outerFlameMaterial);
-        outerFlame.position.y = -0.04;
+        const outerFlame = new THREE.Mesh(flameGeometry, outerFlameMaterial);
+        outerFlame.scale.set(1.6, 1.2, 1);
+        flameGroup.add(outerFlame);
         
-        // Додаємо всі шари до групи
-        flame.add(innerFlame);
-        flame.add(middleFlame);
-        flame.add(outerFlame);
-        
-        candle.add(flame);
+        // ДИМ (дуже легкий, напівпрозорий)
+        const smokeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+        const smokeMaterial = new THREE.MeshBasicMaterial({
+            color: 0x888888,
+            transparent: true,
+            opacity: 0.2
+        });
+        const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
+        smoke.position.y = 0.25;
+        flameGroup.add(smoke);
       }
 
       async initHandTracking() {
@@ -445,10 +502,10 @@
       toggleMicrophone() {
         if (state.isMicActive) {
           this.stopMicrophone();
-          elements.micBtn.style.background = 'rgba(255, 69, 0, 0.9)';
+          elements.micBtn.style.background = 'linear-gradient(135deg, #FF4500 0%, #FF6347 100%)';
         } else {
           this.startMicrophone();
-          elements.micBtn.style.background = '#4CAF50';
+          elements.micBtn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
         }
       }
 
@@ -462,14 +519,14 @@
           const source = state.audioContext.createMediaStreamSource(stream);
           state.analyser = state.audioContext.createAnalyser();
           state.analyser.fftSize = 256;
-          state.analyser.smoothingTimeConstant = 0.3;
+          state.analyser.smoothingTimeConstant = 0.2;
           source.connect(state.analyser);
           
           state.isMicActive = true;
           
         } catch (error) {
           console.error('Помилка мікрофона:', error);
-          alert('Дозвольте доступ до мікрофона для задування свічки');
+          alert('Дозвольте доступ до мікрофона для задування свічки 🎤');
         }
       }
 
@@ -499,7 +556,7 @@
 
       startAnimation() {
         const animate = () => {
-          state.time += 0.016; // ~60 FPS
+          state.time += 0.016;
           this.update();
           this.render();
           state.animationId = requestAnimationFrame(animate);
@@ -508,17 +565,15 @@
       }
 
       update() {
-        // Визначаємо положення руки
         this.detectHand();
         
-        // Оновлюємо положення торта та свічки
         if (state.landmarks && state.isHandVisible) {
           this.updatePosition();
           
           if (!cakeSprite.visible) {
             cakeSprite.visible = true;
             candle.visible = state.isFlameLit;
-            flame.visible = state.isFlameLit;
+            flameGroup.visible = state.isFlameLit;
             elements.wishText.style.display = 'block';
             elements.flameStatus.style.display = 'block';
             elements.handIndicator.style.display = 'none';
@@ -527,7 +582,7 @@
           if (cakeSprite.visible) {
             cakeSprite.visible = false;
             candle.visible = false;
-            flame.visible = false;
+            flameGroup.visible = false;
             elements.wishText.style.display = 'none';
             elements.flameStatus.style.display = 'none';
           }
@@ -537,12 +592,12 @@
           }
         }
         
-        // Анімація полум'я
-        if (state.isFlameLit && flame.visible) {
+        // АНІМАЦІЯ ПОЛУМ'Я (природна)
+        if (state.isFlameLit && flameGroup && flameGroup.visible) {
           this.animateFlame();
         }
         
-        // Перевіряємо, чи задули свічку
+        // Перевірка задування
         if (this.checkMicrophoneVolume() && state.isFlameLit) {
           this.blowOutCandle();
         }
@@ -571,26 +626,19 @@
       updatePosition() {
         if (!state.landmarks) return;
         
-        // Визначаємо центр долоні (середнє між точками)
-        const points = [
-          state.landmarks[0],  // зап'ястя
-          state.landmarks[5],  // основа вказівного
-          state.landmarks[9],  // основа середнього
-          state.landmarks[13], // основа безіменного
-          state.landmarks[17]  // основа мізинця
-        ];
-        
+        // Центр долоні
+        const points = [0, 5, 9, 13, 17];
         let centerX = 0, centerY = 0;
-        for (const point of points) {
-          centerX += point.x;
-          centerY += point.y;
+        for (const idx of points) {
+          centerX += state.landmarks[idx].x;
+          centerY += state.landmarks[idx].y;
         }
         centerX /= points.length;
         centerY /= points.length;
         
-        // Конвертуємо в координати Three.js
-        const x = (centerX - 0.5) * 8; // Масштабуємо
-        const y = (0.5 - centerY) * 6; // Інвертуємо Y
+        // Конвертація координат
+        const x = (centerX - 0.5) * 8;
+        const y = (0.5 - centerY) * 6;
         
         // Позиціонуємо торт
         if (cakeSprite) {
@@ -598,82 +646,121 @@
           cakeSprite.lookAt(camera.position);
         }
         
-        // Позиціонуємо свічку
+        // Позиціонуємо свічку НАД тортом
         if (candle) {
-          candle.position.set(x, y + 0.3, 0); // Вище торта
+          candle.position.set(x, y + 0.5, 0); // Вище на 0.5 одиниці
           candle.lookAt(camera.position);
         }
       }
 
       animateFlame() {
-        if (!flame) return;
+        if (!flameGroup) return;
         
-        // Анімація коливання
         const time = state.time;
         
-        // Різні частоти для природного вигляду
-        const scale1 = 1 + Math.sin(time * 12) * 0.1;
-        const scale2 = 1 + Math.sin(time * 8 + 1) * 0.08;
-        const scale3 = 1 + Math.sin(time * 10 + 2) * 0.06;
+        // РІЗНІ ЧАСТОТИ ДЛЯ ПРИРОДНОСТІ
+        const scale1 = 1 + Math.sin(time * 15) * 0.12;
+        const scale2 = 1 + Math.sin(time * 11 + 1.5) * 0.1;
+        const scale3 = 1 + Math.sin(time * 8 + 2.5) * 0.08;
         
-        // Вертикальне коливання
-        const offsetY = Math.sin(time * 6) * 0.05;
+        // ВЕРТИКАЛЬНЕ КОЛИВАННЯ
+        const offsetY = Math.sin(time * 7) * 0.03;
         
-        // Оновлюємо кожен шар полум'я
-        if (flame.children[0]) {
-          flame.children[0].scale.set(scale1, scale1, scale1);
-          flame.children[0].position.y = offsetY;
-        }
-        if (flame.children[1]) {
-          flame.children[1].scale.set(scale2, scale2, scale2);
-          flame.children[1].position.y = offsetY - 0.02;
-        }
-        if (flame.children[2]) {
-          flame.children[2].scale.set(scale3, scale3, scale3);
-          flame.children[2].position.y = offsetY - 0.04;
-        }
+        // ОБЕРТАННЯ ДЛЯ ЕФЕКТУ "ТАНЦЮ ВОГНЮ"
+        const rotationZ = Math.sin(time * 5) * 0.08;
         
-        // Обертання для ефекту живого вогню
-        flame.rotation.z = Math.sin(time * 3) * 0.1;
+        // ОНОВЛЮЄМО КОЖЕН ШАР
+        flameGroup.children.forEach((layer, index) => {
+          if (index < 3) { // Перші три - шари полум'я
+            const scale = index === 0 ? scale1 : index === 1 ? scale2 : scale3;
+            layer.scale.set(scale, scale * 0.9, scale);
+            layer.position.y = offsetY;
+          }
+        });
+        
+        // Загальне обертання групи
+        flameGroup.rotation.z = rotationZ;
+        
+        // АНІМАЦІЯ КОЛЬОРУ
+        const colorShift = Math.sin(time * 3) * 0.1;
+        if (flameGroup.children[0]) {
+          const innerMaterial = flameGroup.children[0].material;
+          const hue = 0.15 + colorShift; // Від жовтого до оранжевого
+          innerMaterial.color.setHSL(hue, 1, 0.6);
+        }
       }
 
       blowOutCandle() {
         state.isFlameLit = false;
-        flame.visible = false;
+        flameGroup.visible = false;
         
-        // Оновлюємо статус
-        elements.flameStatus.textContent = '🎉 Бажання збулося!';
+        // ЕФЕКТ ЗАДУВАННЯ
+        elements.flameStatus.textContent = '💨 Свічка задута! 🎉';
         elements.flameStatus.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-        elements.flameStatus.style.boxShadow = '0 0 15px rgba(76, 175, 80, 0.7)';
+        elements.flameStatus.style.boxShadow = '0 0 20px rgba(76, 175, 80, 0.8)';
         
-        // Ефект задування
-        this.createBlowEffect();
-        
-        // Через 3 секунди запалюємо знову
-        setTimeout(() => {
-          this.relightCandle();
-        }, 3000);
-      }
-
-      createBlowEffect() {
-        // Простий ефект задування
-        const originalText = elements.wishText.textContent;
-        elements.wishText.textContent = '💨 Свічка задута! 🎉';
+        elements.wishText.textContent = '🎉 Бажання збудеться! ✨';
         elements.wishText.style.color = '#4CAF50';
         
+        // СТВОРЮЄМО ЕФЕКТ ДИМУ
+        this.createSmokeEffect();
+        
+        // ЗВУК ЗАДУВАННЯ
+        this.playBlowSound();
+        
+        // ЧЕРЕЗ 4 СЕКУНДИ ЗНОВУ ЗАПАЛЮЄМО
         setTimeout(() => {
-          elements.wishText.textContent = originalText;
-          elements.wishText.style.color = '#FFD700';
-        }, 2000);
+          this.relightCandle();
+        }, 4000);
+      }
+
+      createSmokeEffect() {
+        // Простий ефект диму через зміну тексту
+        const originalText = elements.wishText.textContent;
+        let smokeCount = 0;
+        const smokeInterval = setInterval(() => {
+          smokeCount++;
+          elements.wishText.textContent = '💨 '.repeat(smokeCount) + 'Димець...';
+          if (smokeCount >= 3) {
+            clearInterval(smokeInterval);
+            elements.wishText.textContent = originalText;
+          }
+        }, 300);
+      }
+
+      playBlowSound() {
+        if (!state.audioContext) return;
+        
+        try {
+          const oscillator = state.audioContext.createOscillator();
+          const gainNode = state.audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(state.audioContext.destination);
+          
+          oscillator.frequency.setValueAtTime(300, state.audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(50, state.audioContext.currentTime + 0.8);
+          
+          gainNode.gain.setValueAtTime(0.4, state.audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, state.audioContext.currentTime + 0.8);
+          
+          oscillator.start();
+          oscillator.stop(state.audioContext.currentTime + 0.8);
+        } catch (e) {
+          // Ігноруємо помилки звуку
+        }
       }
 
       relightCandle() {
         state.isFlameLit = true;
-        flame.visible = true;
+        flameGroup.visible = true;
         
         elements.flameStatus.textContent = '🔥 Полум\'я палає';
-        elements.flameStatus.style.background = 'linear-gradient(135deg, #ff4500 0%, #ff6347 100%)';
-        elements.flameStatus.style.boxShadow = '0 0 15px rgba(255, 69, 0, 0.7)';
+        elements.flameStatus.style.background = 'linear-gradient(135deg, #FF4500 0%, #FF6347 100%)';
+        elements.flameStatus.style.boxShadow = '0 0 20px rgba(255, 69, 0, 0.8)';
+        
+        elements.wishText.textContent = '🎂 Загадай бажання та задуй свічку! 💨';
+        elements.wishText.style.color = '#FFD700';
       }
 
       render() {
@@ -699,29 +786,24 @@
 
       showError(message) {
         elements.loading.innerHTML = `
-          <div style="color: #ff6b6b; font-size: 24px; margin-bottom: 20px;">😕</div>
-          <div style="margin-bottom: 20px;">${message}</div>
-          <button onclick="location.reload()" style="padding: 12px 24px; background: #ff6b95; color: white; border: none; border-radius: 25px; cursor: pointer;">
+          <div style="color: #ff6b6b; font-size: 28px; margin-bottom: 20px;">😕</div>
+          <div style="font-size: 18px; margin-bottom: 20px;">${message}</div>
+          <button onclick="location.reload()" style="padding: 14px 28px; background: linear-gradient(135deg, #FF4500 0%, #FF6347 100%); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 16px;">
             Спробувати знову
           </button>
         `;
       }
 
       cleanup() {
-        if (state.animationId) {
-          cancelAnimationFrame(state.animationId);
-        }
+        if (state.animationId) cancelAnimationFrame(state.animationId);
         if (elements.video.srcObject) {
           elements.video.srcObject.getTracks().forEach(track => track.stop());
         }
-        if (handLandmarker) {
-          handLandmarker.close();
-        }
+        if (handLandmarker) handLandmarker.close();
         this.stopMicrophone();
       }
     }
 
-    // Запуск додатку
     window.addEventListener('DOMContentLoaded', () => {
       const app = new CakeARApp();
       window.addEventListener('beforeunload', () => app.cleanup());
